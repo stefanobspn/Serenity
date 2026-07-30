@@ -1,0 +1,106 @@
+body {
+  font-family: system-ui, sans-serif;
+  max-width: 960px;
+  margin: 30px auto;
+  padding: 0 16px;
+  color: #222;
+}
+
+h1 {
+  font-size: 22px;
+}
+
+#connectBtn {
+  font-size: 16px;
+  padding: 10px 20px;
+  cursor: pointer;
+  background: #2a9d8f;
+  color: white;
+  border: none;
+  border-radius: 6px;
+}
+
+#connectBtn:disabled {
+  background: #aaa;
+  cursor: default;
+}
+
+#status {
+  font-size: 16px;
+  margin-top: 12px;
+}
+
+#battery {
+  font-size: 14px;
+  color: #555;
+}
+
+#bands {
+  display: flex;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 0;
+  list-style: none;
+  flex-wrap: wrap;
+}
+
+.card {
+  border-left: 6px solid #ccc;
+  background: #f5f5f5;
+  padding: 8px 14px;
+  border-radius: 4px;
+  min-width: 110px;
+}
+
+.card .label {
+  font-size: 13px;
+  color: #666;
+  display: block;
+}
+
+.card .label small {
+  color: #999;
+  font-weight: normal;
+  font-size: 11px;
+}
+
+.card .value {
+  font-size: 20px;
+  font-weight: bold;
+  display: block;
+}
+
+.bar {
+  margin-top: 6px;
+  height: 6px;
+  width: 100%;
+  background: #e5e5e5;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  width: 0%;
+  transition: width 0.2s ease;
+}
+
+canvas {
+  width: 100%;
+  max-width: 900px;
+  height: 320px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  display: block;
+}
+
+figure {
+  margin: 0;
+}
+
+figcaption {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #888;
+}
