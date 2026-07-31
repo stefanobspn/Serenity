@@ -1,24 +1,28 @@
 # Muse S Gen 2 - EEG Monitor
 
-Web sederhana untuk terhubung ke headset **Muse S Gen 2** lewat Web Bluetooth,
-lalu menampilkan status koneksi, battery, angka sinyal EEG per channel, dan
-grafik gelombangnya secara langsung.
+Web sederhana untuk terhubung ke headset **Muse S Gen 2** lewat Web
+Bluetooth, lalu menampilkan status koneksi, battery, kartu band power
+(Delta/Theta/Alpha/Beta/Gamma), dan grafiknya secara langsung.
 
 ## Struktur file
 
-- `index.html` — struktur halaman (tombol, status, canvas)
+- `index.html` — struktur halaman (tombol, status, kartu band, canvas)
 - `style.css` — tampilan/layout
-- `script.js` — logika koneksi ke Muse, pengambilan data, dan penggambaran grafik
+- `script.js` — kode utama halaman: pasang tombol Connect/Disconnect,
+  tampilkan status/battery, dan update kartu + grafik saat ada data baru.
+  Pendek karena bagian rumitnya (Bluetooth, decode EEG, FFT) sudah
+  ditangani oleh library MuseSGen2 (lihat di bawah).
 
 ## Library yang dipakai
 
-Koneksi Bluetooth ke headset Muse memakai library open-source
-[MuseJS](https://github.com/Respiire/MuseJS), yang dimuat lewat CDN di
-`index.html`. Library ini yang menangani protokol Bluetooth low-level
-(service/characteristic UUID Muse) sehingga tidak perlu ditulis ulang dari nol.
-
-Semua logika koneksi (tombol connect), pengambilan data channel EEG,
-tampilan angka, status, battery, dan grafik di `script.js` ditulis sendiri.
+- **[MuseSGen2](https://github.com/enuma-technology/musesgen2)** — library
+  koneksi Bluetooth + perhitungan band power, di-maintain sebagai repo
+  terpisah dan dimuat lewat CDN jsdelivr di `index.html`:
+  ```html
+  <script src="https://cdn.jsdelivr.net/gh/enuma-technology/musesgen2@main/script.js"></script>
+  ```
+- **[Chart.js](https://www.chartjs.org/)** — dipakai di `script.js` untuk
+  menggambar grafik band power, dimuat lewat CDN di `index.html`.
 
 ## Cara jalankan
 
