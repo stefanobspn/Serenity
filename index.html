@@ -1,70 +1,83 @@
 <!doctype html>
 <html lang="id">
+
 <head>
-<meta charset="utf-8">
-<title>Muse EEG Monitor</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <title>Muse EEG Monitor</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<header>
-  <h1>Muse S Gen 2 - EEG Monitor</h1>
-</header>
+  <header>
+    <h1>Muse S Gen 2 - EEG Monitor</h1>
+  </header>
 
-<main>
-  <section aria-labelledby="koneksi-heading">
-    <h2 id="koneksi-heading">Koneksi</h2>
-    <button id="connectBtn" type="button">Connect ke Muse</button>
-    <p id="status">Status: belum terhubung</p>
-    <p id="battery">Battery: -</p>
-  </section>
+  <main>
+    <section aria-labelledby="koneksi-heading">
+      <h2 id="koneksi-heading">Koneksi</h2>
+      <button id="connectBtn" type="button">Connect ke Muse</button>
+      <p id="status">Status: belum terhubung</p>
+      <p id="battery">Battery: -</p>
+    </section>
 
-  <section aria-labelledby="band-heading">
-    <h2 id="band-heading">Gelombang Otak (Band Power)</h2>
-    <ul id="bands">
-      <li class="card" style="border-left-color:#3b82f6">
-        <span class="label">Delta <small>0.5-4Hz</small></span>
-        <span class="value" id="band-delta">-</span>
-        <div class="bar"><div class="bar-fill" id="bar-delta" style="background:#3b82f6"></div></div>
-      </li>
-      <li class="card" style="border-left-color:#8b5cf6">
-        <span class="label">Theta <small>4-8Hz</small></span>
-        <span class="value" id="band-theta">-</span>
-        <div class="bar"><div class="bar-fill" id="bar-theta" style="background:#8b5cf6"></div></div>
-      </li>
-      <li class="card" style="border-left-color:#10b981">
-        <span class="label">Alpha <small>8-13Hz</small></span>
-        <span class="value" id="band-alpha">-</span>
-        <div class="bar"><div class="bar-fill" id="bar-alpha" style="background:#10b981"></div></div>
-      </li>
-      <li class="card" style="border-left-color:#f59e0b">
-        <span class="label">Beta <small>13-30Hz</small></span>
-        <span class="value" id="band-beta">-</span>
-        <div class="bar"><div class="bar-fill" id="bar-beta" style="background:#f59e0b"></div></div>
-      </li>
-      <li class="card" style="border-left-color:#ef4444">
-        <span class="label">Gamma <small>30-100Hz</small></span>
-        <span class="value" id="band-gamma">-</span>
-        <div class="bar"><div class="bar-fill" id="bar-gamma" style="background:#ef4444"></div></div>
-      </li>
-    </ul>
-  </section>
+    <section aria-labelledby="band-heading">
+      <h2 id="band-heading">Gelombang Otak (Band Power)</h2>
+      <ul id="bands">
+        <li class="card" style="border-left-color:#3b82f6">
+          <span class="label">Delta <small>0.5-4Hz</small></span>
+          <span class="value" id="band-delta">-</span>
+          <div class="bar">
+            <div class="bar-fill" id="bar-delta" style="background:#3b82f6"></div>
+          </div>
+        </li>
+        <li class="card" style="border-left-color:#8b5cf6">
+          <span class="label">Theta <small>4-8Hz</small></span>
+          <span class="value" id="band-theta">-</span>
+          <div class="bar">
+            <div class="bar-fill" id="bar-theta" style="background:#8b5cf6"></div>
+          </div>
+        </li>
+        <li class="card" style="border-left-color:#10b981">
+          <span class="label">Alpha <small>8-13Hz</small></span>
+          <span class="value" id="band-alpha">-</span>
+          <div class="bar">
+            <div class="bar-fill" id="bar-alpha" style="background:#10b981"></div>
+          </div>
+        </li>
+        <li class="card" style="border-left-color:#f59e0b">
+          <span class="label">Beta <small>13-30Hz</small></span>
+          <span class="value" id="band-beta">-</span>
+          <div class="bar">
+            <div class="bar-fill" id="bar-beta" style="background:#f59e0b"></div>
+          </div>
+        </li>
+        <li class="card" style="border-left-color:#ef4444">
+          <span class="label">Gamma <small>30-100Hz</small></span>
+          <span class="value" id="band-gamma">-</span>
+          <div class="bar">
+            <div class="bar-fill" id="bar-gamma" style="background:#ef4444"></div>
+          </div>
+        </li>
+      </ul>
+    </section>
 
-  <section aria-labelledby="grafik-heading">
-    <h2 id="grafik-heading">Grafik Band Power EEG</h2>
-    <figure>
-      <canvas id="eegChart" width="900" height="320"></canvas>
-      <figcaption>Grafik daya pita real-time: Delta, Theta, Alpha, Beta, Gamma (rata-rata AF7/AF8)</figcaption>
-    </figure>
-  </section>
-</main>
+    <section aria-labelledby="grafik-heading">
+      <h2 id="grafik-heading">Grafik Band Power EEG</h2>
+      <figure>
+        <canvas id="eegChart" width="900" height="320"></canvas>
+        <figcaption>Grafik daya pita real-time: Delta, Theta, Alpha, Beta, Gamma (rata-rata AF7/AF8)</figcaption>
+      </figure>
+    </section>
+  </main>
 
-<!-- Library: urus koneksi Bluetooth, decode EEG, dan FFT band power -->
-<script src="https://cdn.jsdelivr.net/gh/enuma-technology/musesgen2@main/script.js"></script>
-<!-- Library: gambar grafik -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
-<!-- Kode kita: pasang tombol, tampilkan status/battery/band power ke halaman -->
-<script src="script.js"></script>
+  <!-- Library: urus koneksi Bluetooth, decode EEG, dan FFT band power -->
+  <script src="https://cdn.jsdelivr.net/gh/enuma-technology/musesgen2@main/script.js"></script>
+  <!-- Library: gambar grafik -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+  <!-- Kode kita: pasang tombol, tampilkan status/battery/band power ke halaman -->
+  <script src="script.js"></script>
 
 </body>
+
 </html>
