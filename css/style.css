@@ -1,33 +1,44 @@
+:root {
+  --color-primary: #2a9d8f;
+  --color-primary-hover: #23897d;
+}
+
 body {
   font-family: system-ui, sans-serif;
   max-width: 960px;
   margin: 30px auto;
   padding: 0 16px;
   color: #222;
+  /* Jarak antar baris teks. Tanpa ini, browser pakai jarak bawaan yang
+     rapat (~1.2x), jadi kalau teksnya panjang dan turun ke baris kedua
+     (misal pilihan jawaban kuesioner), baris-barisnya kelihatan
+     menempel satu sama lain. */
+  line-height: 1.5;
+}
+
+/* Elemen yang punya atribut hidden harus SELALU tersembunyi, walaupun
+   ada class lain (misalnya .btn-mulai) yang juga mengatur properti
+   display. Tanpa baris ini, aturan display dari class bisa menang dan
+   bikin elemen yang seharusnya hidden malah kelihatan lagi. */
+[hidden] {
+  display: none !important;
 }
 
 h1 {
   font-size: 22px;
 }
 
-#connectBtn {
-  font-size: 16px;
-  padding: 10px 20px;
-  cursor: pointer;
-  background: #2a9d8f;
-  color: white;
-  border: none;
-  border-radius: 6px;
-}
-
-#connectBtn:disabled {
-  background: #aaa;
-  cursor: default;
-}
-
 #status {
   font-size: 16px;
   margin-top: 12px;
+}
+
+/* Dipasang lewat JS (classList.toggle) waktu status koneksi = 'error',
+   supaya error tidak kelihatan sama seperti status normal semacam
+   "menghubungkan..." */
+#status.status-error {
+  color: #b91c1c;
+  font-weight: bold;
 }
 
 #battery {
@@ -86,6 +97,25 @@ h1 {
   transition: width 0.2s ease;
 }
 
+/* Warna khas tiap band gelombang otak.
+   Dipakai di dua tempat: garis kiri kartu (.card) dan isi bar (.bar-fill),
+   makanya ditulis terpisah per elemen supaya tidak menimpa warna
+   background kartu yang sudah diatur di aturan .card di atas. */
+.card.band-delta { border-left-color: #3b82f6; }
+.bar-fill.band-delta { background: #3b82f6; }
+
+.card.band-theta { border-left-color: #8b5cf6; }
+.bar-fill.band-theta { background: #8b5cf6; }
+
+.card.band-alpha { border-left-color: #10b981; }
+.bar-fill.band-alpha { background: #10b981; }
+
+.card.band-beta { border-left-color: #f59e0b; }
+.bar-fill.band-beta { background: #f59e0b; }
+
+.card.band-gamma { border-left-color: #ef4444; }
+.bar-fill.band-gamma { background: #ef4444; }
+
 canvas {
   width: 100%;
   max-width: 900px;
@@ -103,4 +133,179 @@ figcaption {
   margin-top: 6px;
   font-size: 12px;
   color: #888;
+}
+
+/* Catatan kecil (mis. prasyarat sebelum connect, penjelasan istilah) */
+.catatan {
+  font-size: 13px;
+  color: #666;
+  background: #f5f5f5;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 8px 0;
+}
+
+/* ===== Landing page (index.html) ===== */
+
+.landing {
+  text-align: center;
+  margin-top: 80px;
+}
+
+.landing p {
+  max-width: 500px;
+  margin: 16px auto 32px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.btn-mulai {
+  display: inline-block;
+  font-size: 18px;
+  padding: 14px 32px;
+  background: var(--color-primary);
+  color: white;
+  text-decoration: none;
+  /* <a> otomatis tidak ada border tebal & kursornya sudah pointer,
+     tapi class ini sekarang juga dipakai di banyak <button> asli,
+     jadi dua hal itu perlu ditulis eksplisit di sini. */
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.btn-mulai:hover {
+  background: var(--color-primary-hover);
+}
+
+/* .btn-mulai juga dipakai pada <button> (bukan cuma <a>), misalnya tombol
+   "Mulai Rekam" yang sengaja dikunci sampai headset terhubung. Tanpa ini,
+   tombol yang di-disable lewat JS/HTML tetap kelihatan teal & bisa
+   ditekan, padahal klik-nya tidak akan berpengaruh. */
+.btn-mulai:disabled {
+  background: #aaa;
+  cursor: default;
+}
+
+/* ===== Form kuesioner (pss5.html, kuesioner-makan.html, kuesioner-lapar.html) ===== */
+
+/* Penanda "Langkah X dari 3", supaya peserta tahu masih berapa lama lagi */
+.langkah {
+  color: #888;
+  font-size: 13px;
+  margin: -8px 0 16px;
+}
+
+/* Link kembali ke halaman sebelumnya */
+.link-kembali {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.link-kembali:hover {
+  text-decoration: underline;
+}
+
+form fieldset {
+  margin: 0 0 20px;
+  padding: 16px 20px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+form legend {
+  font-weight: bold;
+  padding: 0 6px;
+  margin-bottom: 4px;
+}
+
+/* Satu pilihan jawaban per baris (bukan disambung ke samping), supaya
+   pilihan dengan teks panjang tidak menempel dengan pilihan lain di
+   sebelahnya. Padding dipakai (bukan cuma margin) supaya area yang
+   bisa diklik lebih besar dari sekadar bulatan radio-nya. */
+form label {
+  display: block;
+  padding: 6px 8px;
+  margin: 2px 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+form label:hover {
+  background: #f0f0f0;
+}
+
+form input[type="radio"] {
+  margin-right: 8px;
+}
+
+/* ===== Ringkasan kuesioner (eeg.html) ===== */
+
+#ringkasan-kuesioner {
+  background: #f5f5f5;
+  border-radius: 6px;
+  padding: 12px 16px;
+}
+
+#ringkasan-kuesioner ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+/* ===== Feedback & aksi akhir (hasil.html) ===== */
+
+#feedbackInput {
+  width: 100%;
+  max-width: 600px;
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  resize: vertical;
+  box-sizing: border-box; /* biar padding tidak bikin lebar melebihi 100% */
+}
+
+#feedbackInput:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* Kotak buat menaruh beberapa tombol berdampingan, dengan jarak yang
+   sama di antara mereka. Dipakai di eeg.html (Connect + Demo, dan
+   Mulai Rekam + Batalkan) dan hasil.html (Unduh CSV + Mulai Sesi Baru) —
+   satu aturan jarak buat semua tempat yang punya lebih dari satu tombol. */
+.tombol-baris {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Versi outline dari .btn-mulai, dipakai buat aksi yang bukan aksi utama
+   halaman (unduh CSV, demo tanpa headset), supaya tidak semencolok
+   tombol aksi utamanya. */
+.btn-mulai.btn-sekunder {
+  background: #fff;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-mulai.btn-sekunder:hover {
+  background: #f0fdfa;
+}
+
+/* Versi "hati-hati" dari .btn-mulai, dipakai buat aksi yang membatalkan
+   sesuatu yang sedang berjalan (batal rekam). Triknya sama seperti
+   .btn-sekunder di atas: bentuk kotaknya tetap dari .btn-mulai, cuma
+   warnanya diganti jadi merah supaya kelihatan beda dari aksi biasa. */
+.btn-mulai.btn-bahaya {
+  background: #fff;
+  color: #b91c1c;
+  border: 1px solid #b91c1c;
+}
+
+.btn-mulai.btn-bahaya:hover {
+  background: #fef2f2;
 }

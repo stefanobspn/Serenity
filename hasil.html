@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8">
+  <title>Serenity — Hasil Akhir</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <header>
+    <h1>Hasil Akhir</h1>
+  </header>
+
+  <main>
+    <a class="link-kembali" href="eeg.html">&larr; Kembali ke Monitor EEG</a>
+    <p class="langkah">Langkah 5 dari 5</p>
+
+    <section>
+      <h2>Ringkasan Kuesioner</h2>
+      <div id="ringkasan-kuesioner">Memuat...</div>
+    </section>
+
+    <section>
+      <h2>Hasil EEG (Band Power)</h2>
+      <p id="eegKosong" class="catatan" hidden>
+        Belum ada data EEG (sesi rekam 1 menit belum pernah selesai
+        dijalankan).
+      </p>
+      <ul id="bands">
+        <li class="card band-delta">
+          <span class="label">Delta <small>0.5-4Hz</small></span>
+          <span class="value" id="band-delta">-</span>
+          <div class="bar">
+            <div class="bar-fill band-delta" id="bar-delta"></div>
+          </div>
+        </li>
+        <li class="card band-theta">
+          <span class="label">Theta <small>4-8Hz</small></span>
+          <span class="value" id="band-theta">-</span>
+          <div class="bar">
+            <div class="bar-fill band-theta" id="bar-theta"></div>
+          </div>
+        </li>
+        <li class="card band-alpha">
+          <span class="label">Alpha <small>8-13Hz</small></span>
+          <span class="value" id="band-alpha">-</span>
+          <div class="bar">
+            <div class="bar-fill band-alpha" id="bar-alpha"></div>
+          </div>
+        </li>
+        <li class="card band-beta">
+          <span class="label">Beta <small>13-30Hz</small></span>
+          <span class="value" id="band-beta">-</span>
+          <div class="bar">
+            <div class="bar-fill band-beta" id="bar-beta"></div>
+          </div>
+        </li>
+        <li class="card band-gamma">
+          <span class="label">Gamma <small>30-100Hz</small></span>
+          <span class="value" id="band-gamma">-</span>
+          <div class="bar">
+            <div class="bar-fill band-gamma" id="bar-gamma"></div>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Feedback</h2>
+      <p class="catatan">
+        Tulis kesan atau masukan tentang sesi ini (opsional). Tersimpan
+        otomatis sambil kamu mengetik — tidak perlu tombol simpan.
+      </p>
+      <textarea id="feedbackInput" rows="4"
+        placeholder="Tulis masukanmu di sini..."></textarea>
+    </section>
+
+    <section class="tombol-baris">
+      <button id="downloadCsvBtn" type="button" class="btn-mulai btn-sekunder">Unduh Hasil (CSV)</button>
+      <button id="mulaiLagiBtn" type="button" class="btn-mulai">Mulai Sesi Baru</button>
+    </section>
+  </main>
+
+  <script src="js/storage.js"></script>
+  <script src="js/hasil.js"></script>
+
+</body>
+
+</html>

@@ -3,80 +3,124 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Muse EEG Monitor</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Serenity — Monitor EEG</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
   <header>
-    <h1>Muse S Gen 2 - EEG Monitor</h1>
+    <h1>EEG Monitor</h1>
   </header>
 
   <main>
-    <section aria-labelledby="koneksi-heading">
-      <h2 id="koneksi-heading">Koneksi</h2>
-      <button id="connectBtn" type="button">Connect ke Muse</button>
+    <a class="link-kembali" href="kuesioner-lapar.html">&larr; Kembali</a>
+    <p class="langkah">Langkah 4 dari 5</p>
+
+    <section>
+      <h2>Koneksi</h2>
+      <p class="catatan">
+        Sebelum menekan tombol ini: pastikan headset Muse S Gen 2 sudah
+        menyala dan siap dipasangkan, dan halaman ini dibuka lewat
+        Chrome atau Edge (browser lain belum mendukung Bluetooth).
+      </p>
+      <div class="tombol-baris">
+        <button id="connectBtn" type="button" class="btn-mulai">Connect ke Muse</button>
+        <button id="demoBtn" type="button" class="btn-mulai btn-sekunder">Demo (Data Dummy)</button>
+      </div>
+      <p class="catatan">
+        Tombol "Demo" cuma buat development/testing waktu belum ada
+        headset fisik — akan mengisi status & band power pakai angka
+        acak, BUKAN data EEG asli.
+      </p>
       <p id="status">Status: belum terhubung</p>
       <p id="battery">Battery: -</p>
     </section>
 
-    <section aria-labelledby="band-heading">
-      <h2 id="band-heading">Gelombang Otak (Band Power)</h2>
+    <section>
+      <h2>Gelombang Otak (Band Power)</h2>
+      <p class="catatan">
+        Otak menghasilkan gelombang listrik dengan frekuensi yang beda-beda
+        tergantung kondisinya: Delta dominan saat tidur nyenyak, Theta saat
+        mengantuk/rileks, Alpha saat tenang dan fokus, Beta saat aktif
+        berpikir, dan Gamma saat konsentrasi tinggi.
+      </p>
       <ul id="bands">
-        <li class="card" style="border-left-color:#3b82f6">
+        <li class="card band-delta">
           <span class="label">Delta <small>0.5-4Hz</small></span>
           <span class="value" id="band-delta">-</span>
           <div class="bar">
-            <div class="bar-fill" id="bar-delta" style="background:#3b82f6"></div>
+            <div class="bar-fill band-delta" id="bar-delta"></div>
           </div>
         </li>
-        <li class="card" style="border-left-color:#8b5cf6">
+        <li class="card band-theta">
           <span class="label">Theta <small>4-8Hz</small></span>
           <span class="value" id="band-theta">-</span>
           <div class="bar">
-            <div class="bar-fill" id="bar-theta" style="background:#8b5cf6"></div>
+            <div class="bar-fill band-theta" id="bar-theta"></div>
           </div>
         </li>
-        <li class="card" style="border-left-color:#10b981">
+        <li class="card band-alpha">
           <span class="label">Alpha <small>8-13Hz</small></span>
           <span class="value" id="band-alpha">-</span>
           <div class="bar">
-            <div class="bar-fill" id="bar-alpha" style="background:#10b981"></div>
+            <div class="bar-fill band-alpha" id="bar-alpha"></div>
           </div>
         </li>
-        <li class="card" style="border-left-color:#f59e0b">
+        <li class="card band-beta">
           <span class="label">Beta <small>13-30Hz</small></span>
           <span class="value" id="band-beta">-</span>
           <div class="bar">
-            <div class="bar-fill" id="bar-beta" style="background:#f59e0b"></div>
+            <div class="bar-fill band-beta" id="bar-beta"></div>
           </div>
         </li>
-        <li class="card" style="border-left-color:#ef4444">
+        <li class="card band-gamma">
           <span class="label">Gamma <small>30-100Hz</small></span>
           <span class="value" id="band-gamma">-</span>
           <div class="bar">
-            <div class="bar-fill" id="bar-gamma" style="background:#ef4444"></div>
+            <div class="bar-fill band-gamma" id="bar-gamma"></div>
           </div>
         </li>
       </ul>
     </section>
 
-    <section aria-labelledby="grafik-heading">
-      <h2 id="grafik-heading">Grafik Band Power EEG</h2>
+    <section>
+      <h2>Grafik Band Power EEG</h2>
       <figure>
         <canvas id="eegChart" width="900" height="320"></canvas>
         <figcaption>Grafik daya pita real-time: Delta, Theta, Alpha, Beta, Gamma (rata-rata AF7/AF8)</figcaption>
       </figure>
     </section>
+
+    <section>
+      <h2>Rekam Data</h2>
+      <p class="catatan">
+        Pastikan sudah terhubung ke headset dan band power sudah muncul di
+        atas, baru tekan tombol ini. Perekaman berlangsung 1 menit, lalu
+        kamu otomatis dibawa ke halaman Hasil Akhir.
+      </p>
+      <div class="tombol-baris">
+        <button id="recordBtn" type="button" class="btn-mulai" disabled>Mulai Rekam (1 Menit)</button>
+        <button id="cancelRecordBtn" type="button" class="btn-mulai btn-bahaya" hidden>Batalkan Rekam</button>
+      </div>
+      <p id="recordStatus"></p>
+    </section>
   </main>
 
-  <!-- Library: urus koneksi Bluetooth, decode EEG, dan FFT band power -->
+  <!-- Library eksternal: urus koneksi Bluetooth, decode EEG, dan FFT band power.
+       Anggap ini seperti "driver hardware" - rumit di dalamnya, tapi cara
+       pakainya sederhana (lihat eeg.js). -->
   <script src="https://cdn.jsdelivr.net/gh/enuma-technology/musesgen2@main/script.js"></script>
-  <!-- Library: gambar grafik -->
+  <!-- Library eksternal: gambar grafik garis. Sama seperti MuseSGen2 di
+       atas, dianggap "alat siap pakai" — kita cuma isi data & options-nya
+       lewat js/eeg.js, tidak perlu tahu cara Chart.js menggambar di dalamnya. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
-  <!-- Kode kita: pasang tombol, tampilkan status/battery/band power ke halaman -->
-  <script src="script.js"></script>
+  <!-- Helper simpan/ambil hasil kuesioner dari localStorage (dipakai juga
+       di halaman-halaman kuesioner) -->
+  <script src="js/storage.js"></script>
+  <!-- Kode kita sendiri: pasang tombol, tampilkan status/battery/band power,
+       urus grafik Chart.js, dan urus sesi rekam 1 menit -->
+  <script src="js/eeg.js"></script>
 
 </body>
 
