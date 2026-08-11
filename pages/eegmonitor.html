@@ -15,7 +15,7 @@
 
     <main>
         <a href="hungerscale.html" class="link-kembali">&larr; Kembali</a>
-        <p class="langkah">Langkah 4 dari 5</p>
+        <p class="langkah">Langkah 5 dari 5</p>
 
         <section>
             <h2>Koneksi</h2>
@@ -39,7 +39,7 @@
                 mengantuk/rileks, Alpha saat tenang dan fokus, Beta saat aktif
                 berpikir, dan Gamma saat konsentrasi tinggi.</p>
 
-            <ul id="bands">
+            <ul id="bands" class="bands-list">
                 <li class="card band-delta">
                     <span class="label">Delta <small>0.5-4Hz</small></span>
                     <span class="value" id="band-delta">-</span>
@@ -77,13 +77,13 @@
         </section>
 
         <section>
-            <h2>Rekam Data</h2>
-            <p class="catatan">Pastikan sudah terhubung ke headset dan band power sudah muncul di
+            <h2 id="rekamHeading">Rekam Data — EEG 1 (Baseline)</h2>
+            <p id="rekamInstruksi" class="catatan">Pastikan sudah terhubung ke headset dan band power sudah muncul di
                 atas, baru tekan tombol ini. Perekaman berlangsung 1 menit, lalu
                 kamu otomatis dibawa ke halaman Hasil Akhir.</p>
 
-            <button id="recordBtn" class="btn-rekam">Mulai Rekam (1 Menit)</button>
-            <button id="cancelRecordBtn" class="btn-rekam">Batalkan Rekam</button>
+            <button id="recordBtn" class="btn-rekam">Mulai Rekam</button>
+            <button id="stopRecordBtn" class="btn-rekam" hidden>Stop Rekam</button>
             <p id="recordStatus"></p>
         </section>
 

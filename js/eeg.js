@@ -10,8 +10,9 @@
    1. Menyambungkan tombol Connect/Disconnect ke library
    2. Menampilkan status koneksi & battery ke halaman
    3. Menampilkan band power ke kartu + grafik garis
-   4. Merekam data selama 1 menit, lalu simpan rata-ratanya dan pindah ke
-      halaman Hasil Akhir (lihat hasilakhir.html)
+   4. Merekam data sampai peserta menekan "Stop Rekam", dua kali
+      berturut-turut (EEG 1 lalu EEG 2 — lihat blok "Tahap rekam" di
+      bawah), baru lalu pindah ke halaman Hasil Akhir (lihat hasilakhir.html)
 
    Grafiknya digambar pakai library eksternal Chart.js (di-load dari CDN
    di eegmonitor.html), diperlakukan sama seperti MuseSGen2: kita cuma isi
@@ -21,7 +22,6 @@
 
 // --- Konstanta ---
 var MAX_POINTS = 60; // jumlah titik riwayat yang ditampilkan di grafik
-var DURASI_REKAM_DETIK = 60; // lama sesi rekam data EEG, dalam detik
 
 
 // --- Ambil elemen-elemen HTML yang isinya akan kita ubah lewat JS ---
@@ -29,13 +29,44 @@ var connectBtn = document.getElementById('connectBtn');
 var statusEl = document.getElementById('status');
 var batteryEl = document.getElementById('battery');
 var recordBtn = document.getElementById('recordBtn');
-var cancelRecordBtn = document.getElementById('cancelRecordBtn');
+var stopRecordBtn = document.getElementById('stopRecordBtn');
 var recordStatusEl = document.getElementById('recordStatus');
 var demoBtn = document.getElementById('demoBtn');
+var rekamHeadingEl = document.getElementById('rekamHeading');
+var rekamInstruksiEl = document.getElementById('rekamInstruksi');
 
 
 // --- Objek utama dari library MuseSGen2 ---
 var muse = new MuseSGen2();
+
+
+/* ===== Tahap rekam: EEG 1 (baseline) lalu EEG 2 (setelah aktivitas) =====
+   Halaman ini dipakai dua kali berturut-turut tanpa pindah halaman: sekali
+   buat rekam EEG 1 (baseline, sebelum aktivitas), sekali lagi buat rekam
+   EEG 2 (setelah peserta melakukan aktivitas yang diinstruksikan peneliti
+   di luar aplikasi ini, misalnya tes memori/aritmatika — lihat
+   docs/RingkasanKarya.md). Dipakai dua kali di halaman yang sama (bukan dua
+   halaman terpisah) supaya koneksi Bluetooth ke headset tidak perlu
+   disambung ulang di antara dua rekaman.
+
+   Nomor tahap dicek dari localStorage waktu halaman dibuka (bukan cuma
+   disimpan di variabel), supaya kalau peserta reload halaman di tengah
+   alur (misal EEG 1 sudah kesimpan tapi belum sempat rekam EEG 2), tahapnya
+   tetap benar begitu halaman dibuka lagi. */
+var tahapEeg = ambilHasilKuesioner().eeg1 ? 2 : 1;
+
+function tampilkanTahapEeg() {
+  if (tahapEeg === 1) {
+    rekamHeadingEl.textContent = 'Rekam Data — EEG 1 (Baseline)';
+    rekamInstruksiEl.textContent = 'Pastikan sudah terhubung ke headset dan band power sudah muncul di atas, baru tekan tombol ini. Tekan "Stop Rekam" kapan saja untuk menyelesaikan sesi ini.';
+    recordBtn.textContent = 'Mulai Rekam';
+  } else {
+    rekamHeadingEl.textContent = 'Rekam Data — EEG 2 (Setelah Aktivitas)';
+    rekamInstruksiEl.textContent = 'EEG 1 sudah selesai direkam. Sekarang lakukan aktivitas yang diinstruksikan peneliti (misalnya tes memori/aritmatika), lalu tekan tombol ini untuk merekam EEG 2. Tekan "Stop Rekam" kapan saja untuk menyelesaikan sesi ini.';
+    recordBtn.textContent = 'Mulai Rekam EEG 2';
+  }
+}
+tampilkanTahapEeg();
 
 
 /* ===== Cek dukungan Bluetooth di browser ini =====
@@ -52,29 +83,15 @@ if (!navigator.bluetooth) {
 
 /* ===== Bagian Kartu Band Power ===== */
 
-// Update satu kartu band (angka + panjang bar) berdasarkan nilai terbaru.
-// maxValueAllBands dipakai supaya panjang bar itu relatif: band dengan
-// nilai tertinggi saat itu barnya penuh (100%), yang lain proporsional.
-function updateBandCard(band, value, maxValueAllBands) {
-  var valueEl = document.getElementById('band-' + band.key);
-  var barEl = document.getElementById('bar-' + band.key);
-
-  valueEl.textContent = MuseSGen2.formatPower(value);
-  barEl.style.width = persenBar(value, maxValueAllBands) + '%';
-}
-
-// Ubah satu nilai band jadi persen panjang bar (0-100), relatif terhadap
-// nilai band tertinggi saat itu. Dipakai baik untuk update kartu band power
-// secara live, maupun saat menghitung hasil akhir rekaman.
-function persenBar(value, maxValueAllBands) {
-  return Math.min(100, (value / maxValueAllBands) * 100);
+// Update angka di satu kartu band berdasarkan nilai terbaru.
+function updateBandCard(band, value) {
+  document.getElementById('band-' + band.key).textContent = MuseSGen2.formatPower(value);
 }
 
 // Kosongkan tampilan semua kartu band (dipanggil saat headset terputus)
 function resetBandCards() {
   MuseSGen2.BANDS.forEach(function (band) {
     document.getElementById('band-' + band.key).textContent = '-';
-    document.getElementById('bar-' + band.key).style.width = '0%';
   });
 }
 
@@ -113,19 +130,22 @@ var chart = new Chart(document.getElementById('eegChart').getContext('2d'), {
 });
 
 
-/* ===== Sesi Rekam Data EEG (1 menit) =====
-   Daripada mengambil satu snapshot band power sesaat, kita rekam selama
-   DURASI_REKAM_DETIK detik lalu simpan RATA-RATA band power selama jendela
-   waktu itu — supaya hasilnya lebih mewakili kondisi peserta, bukan cuma
-   kebetulan satu titik data. */
+/* ===== Sesi Rekam Data EEG (durasi bebas, distop manual) =====
+   Daripada mengambil satu snapshot band power sesaat, kita rekam sampai
+   peserta menekan "Stop Rekam", lalu simpan RATA-RATA band power selama
+   jendela waktu itu — supaya hasilnya lebih mewakili kondisi peserta,
+   bukan cuma kebetulan satu titik data. Tidak ada batas waktu tetap —
+   lama rekaman terserah peserta/peneliti, cuma waktu yang sudah berjalan
+   ditampilkan di layar (lihat mulaiRekam). */
 
 var sedangMerekam = false;
-var sisaWaktuDetik = 0;
+var waktuBerjalanDetik = 0;
 var timerRekam = null; // penampung id dari setInterval, supaya bisa dibatalkan
 var jumlahBandPower = {}; // total penjumlahan tiap band selama rekaman
 var jumlahSampel = 0; // berapa kali onBandPower menembak selama rekaman
 
-// Bersiap merekam: kosongkan akumulator, kunci tombol, mulai hitung mundur.
+// Bersiap merekam: kosongkan akumulator, kunci tombol, mulai hitung waktu
+// berjalan (naik terus sampai peserta menekan "Stop Rekam").
 function mulaiRekam() {
   MuseSGen2.BANDS.forEach(function (band) {
     jumlahBandPower[band.key] = 0;
@@ -134,67 +154,56 @@ function mulaiRekam() {
 
   sedangMerekam = true;
   recordBtn.disabled = true;
-  cancelRecordBtn.hidden = false; // munculkan tombol batal selama rekam berlangsung
+  stopRecordBtn.hidden = false; // munculkan tombol stop selama rekam berlangsung
 
-  sisaWaktuDetik = DURASI_REKAM_DETIK;
-  recordStatusEl.textContent = 'Merekam... sisa ' + sisaWaktuDetik + ' detik';
+  waktuBerjalanDetik = 0;
+  recordStatusEl.textContent = 'Merekam... ' + waktuBerjalanDetik + ' detik berjalan';
 
   timerRekam = setInterval(function () {
-    sisaWaktuDetik--;
-    if (sisaWaktuDetik <= 0) {
-      clearInterval(timerRekam);
-      selesaiRekam();
-    } else {
-      recordStatusEl.textContent = 'Merekam... sisa ' + sisaWaktuDetik + ' detik';
-    }
+    waktuBerjalanDetik++;
+    recordStatusEl.textContent = 'Merekam... ' + waktuBerjalanDetik + ' detik berjalan';
   }, 1000);
 }
+recordBtn.addEventListener('click', mulaiRekam);
 
-// Peserta menekan "Batalkan Rekam" di tengah sesi: hentikan hitung mundur,
-// buang data yang sudah terkumpul, dan kembalikan tombol ke keadaan semula
-// TANPA memutus koneksi headset (beda dengan muse.onReset di bawah).
-function batalkanRekam() {
+// Peserta menekan "Stop Rekam": hentikan hitung waktu, lalu hitung
+// rata-rata dan simpan (lihat selesaiRekam). Beda dengan muse.onReset di
+// bawah — di sini koneksi headset TIDAK ikut terputus.
+stopRecordBtn.addEventListener('click', selesaiRekam);
+
+// Peserta menekan Stop: hentikan timer, hitung rata-rata, simpan ke
+// localStorage. Kalau ini baru selesai EEG 1, lanjut ke tahap EEG 2 di
+// halaman yang sama (lihat blok "Tahap rekam" di atas). Kalau ini baru
+// selesai EEG 2, pindah ke halaman Hasil Akhir.
+function selesaiRekam() {
   clearInterval(timerRekam);
   sedangMerekam = false;
-  recordBtn.disabled = false;
-  cancelRecordBtn.hidden = true;
-  recordStatusEl.textContent = 'Rekaman dibatalkan.';
-}
-cancelRecordBtn.addEventListener('click', batalkanRekam);
-
-// Waktu rekam habis: hitung rata-rata, simpan ke localStorage, lalu pindah
-// ke halaman Hasil Akhir.
-function selesaiRekam() {
-  sedangMerekam = false;
-  cancelRecordBtn.hidden = true;
+  stopRecordBtn.hidden = true;
 
   var hasilEeg = null;
 
   if (jumlahSampel > 0) {
-    var rataRata = {};
-    MuseSGen2.BANDS.forEach(function (band) {
-      rataRata[band.key] = jumlahBandPower[band.key] / jumlahSampel;
-    });
-
-    var maxValueRataRata = 1e-9;
-    MuseSGen2.BANDS.forEach(function (band) {
-      if (rataRata[band.key] > maxValueRataRata) maxValueRataRata = rataRata[band.key];
-    });
-
     hasilEeg = {};
     MuseSGen2.BANDS.forEach(function (band) {
-      hasilEeg[band.key] = {
-        value: MuseSGen2.formatPower(rataRata[band.key]),
-        percent: persenBar(rataRata[band.key], maxValueRataRata)
-      };
+      var rataRata = jumlahBandPower[band.key] / jumlahSampel;
+      // "raw" (angka mentah, belum dibulatkan) disimpan terpisah dari
+      // "value" (teks siap tampil) supaya halaman Hasil Akhir bisa hitung
+      // rasio Theta/Beta secara presisi, tanpa harus parsing balik teks.
+      hasilEeg[band.key] = { value: MuseSGen2.formatPower(rataRata), raw: rataRata };
     });
   }
 
-  simpanHasilKuesioner('eeg', hasilEeg);
-  window.location.href = 'hasilakhir.html';
+  if (tahapEeg === 1) {
+    simpanHasilKuesioner('eeg1', hasilEeg);
+    tahapEeg = 2;
+    tampilkanTahapEeg();
+    recordBtn.disabled = false;
+    recordStatusEl.textContent = 'EEG 1 selesai direkam.';
+  } else {
+    simpanHasilKuesioner('eeg2', hasilEeg);
+    window.location.href = 'hasilakhir.html';
+  }
 }
-
-recordBtn.addEventListener('click', mulaiRekam);
 
 
 /* ===== Hubungkan tombol Connect/Disconnect ===== */
@@ -222,7 +231,7 @@ function handleStatusChange(text, state) {
   connectBtn.textContent = state === 'connected' ? 'Disconnect' : 'Connect ke Muse';
 
   // Tombol rekam cuma boleh ditekan kalau sudah terhubung, dan tetap
-  // terkunci selama proses rekam 1 menit sedang berjalan.
+  // terkunci selama proses rekam sedang berjalan.
   recordBtn.disabled = state !== 'connected' || sedangMerekam;
 }
 muse.onStatusChange(handleStatusChange);
@@ -232,18 +241,11 @@ muse.onBattery(function (percent) {
   batteryEl.textContent = 'Battery: ' + Math.round(percent) + '%';
 });
 
-// Update angka & panjang bar di tiap kartu band (Delta/Theta/dst) sesuai
-// data band power yang baru masuk.
+// Update angka di tiap kartu band (Delta/Theta/dst) sesuai data band power
+// yang baru masuk.
 function perbaruiKartuBand(powers) {
-  // Cari nilai tertinggi di antara 5 band pada sampel saat ini,
-  // dipakai sebagai skala panjang bar di kartu (lihat updateBandCard)
-  var maxValueNow = 1e-9;
   MuseSGen2.BANDS.forEach(function (band) {
-    if (powers[band.key] > maxValueNow) maxValueNow = powers[band.key];
-  });
-
-  MuseSGen2.BANDS.forEach(function (band) {
-    updateBandCard(band, powers[band.key], maxValueNow);
+    updateBandCard(band, powers[band.key]);
   });
 }
 
@@ -300,16 +302,16 @@ muse.onReset(function () {
   if (sedangMerekam) {
     clearInterval(timerRekam);
     sedangMerekam = false;
-    cancelRecordBtn.hidden = true;
+    stopRecordBtn.hidden = true;
     recordStatusEl.textContent = '';
   }
 });
 
 /* ===== Peringatan kalau halaman ditutup/ditinggalkan saat sedang merekam =====
    Tanpa ini, peserta bisa tidak sengaja pindah/menutup tab di tengah sesi
-   rekam 1 menit dan seluruh data yang sudah terkumpul hilang begitu saja
-   tanpa peringatan. Browser akan menampilkan dialog konfirmasi bawaannya
-   sendiri kalau sedangMerekam bernilai true. */
+   rekam dan seluruh data yang sudah terkumpul hilang begitu saja tanpa
+   peringatan. Browser akan menampilkan dialog konfirmasi bawaannya sendiri
+   kalau sedangMerekam bernilai true. */
 window.addEventListener('beforeunload', function (event) {
   if (sedangMerekam) {
     event.preventDefault();
@@ -321,7 +323,7 @@ window.addEventListener('beforeunload', function (event) {
 /* ===== Tombol Demo (khusus development, tanpa headset asli) =====
    Kalau belum ada headset fisik di tangan, tombol ini bikin halaman
    "berpura-pura" terhubung dan mengirim band power acak, supaya sisa alur
-   (kartu, grafik, rekam 1 menit, sampai ke hasilakhir.html) tetap bisa dites. */
+   (kartu, grafik, rekam data, sampai ke hasilakhir.html) tetap bisa dites. */
 
 // Buat angka band power acak, cuma buat simulasi waktu belum ada headset
 // fisik. Range-nya sekadar mendekati skala data asli, BUKAN data EEG asli.

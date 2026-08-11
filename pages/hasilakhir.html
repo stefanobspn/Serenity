@@ -23,37 +23,63 @@
             <h2>Hasil EEG (Band Power)</h2>
             <p id="eegKosong" class="catatan" hidden>Belum ada data EEG</p>
 
-            <ul id="bands">
-                <li class="card band-delta">
-                    <span class="label">Delta <small>0.5-4Hz</small></span>
-                    <span class="value" id="band-delta">-</span>
-                    
-                </li>
+            <div id="eegPerbandingan" hidden>
+                <h3>EEG 1 (Baseline)</h3>
+                <ul id="bandsEeg1" class="bands-list">
+                    <li class="card band-delta">
+                        <span class="label">Delta <small>0.5-4Hz</small></span>
+                        <span class="value" id="band-eeg1-delta">-</span>
+                    </li>
+                    <li class="card band-theta">
+                        <span class="label">Theta <small>4-8Hz</small></span>
+                        <span class="value" id="band-eeg1-theta">-</span>
+                    </li>
+                    <li class="card band-alpha">
+                        <span class="label">Alpha <small>8-13Hz</small></span>
+                        <span class="value" id="band-eeg1-alpha">-</span>
+                    </li>
+                    <li class="card band-beta">
+                        <span class="label">Beta <small>13-30Hz</small></span>
+                        <span class="value" id="band-eeg1-beta">-</span>
+                    </li>
+                    <li class="card band-gamma">
+                        <span class="label">Gamma <small>30-100Hz</small></span>
+                        <span class="value" id="band-eeg1-gamma">-</span>
+                    </li>
+                </ul>
 
-                <li class="card band-theta">
-                    <span class="label">Theta <small>4-8Hz</small></span>
-                    <span class="value" id="band-theta">-</span>
-                    
-                </li>
+                <h3>EEG 2 (Setelah Aktivitas)</h3>
+                <ul id="bandsEeg2" class="bands-list">
+                    <li class="card band-delta">
+                        <span class="label">Delta <small>0.5-4Hz</small></span>
+                        <span class="value" id="band-eeg2-delta">-</span>
+                    </li>
+                    <li class="card band-theta">
+                        <span class="label">Theta <small>4-8Hz</small></span>
+                        <span class="value" id="band-eeg2-theta">-</span>
+                    </li>
+                    <li class="card band-alpha">
+                        <span class="label">Alpha <small>8-13Hz</small></span>
+                        <span class="value" id="band-eeg2-alpha">-</span>
+                    </li>
+                    <li class="card band-beta">
+                        <span class="label">Beta <small>13-30Hz</small></span>
+                        <span class="value" id="band-eeg2-beta">-</span>
+                    </li>
+                    <li class="card band-gamma">
+                        <span class="label">Gamma <small>30-100Hz</small></span>
+                        <span class="value" id="band-eeg2-gamma">-</span>
+                    </li>
+                </ul>
 
-                <li class="card band-alpha">
-                    <span class="label">Alpha <small>8-13Hz</small></span>
-                    <span class="value" id="band-alpha">-</span>
-                    
-                </li>
+                <p id="verdictStres" class="catatan"></p>
+                <p id="verdictLapar" class="catatan"></p>
+            </div>
+        </section>
 
-                <li class="card band-beta">
-                    <span class="label">Beta <small>13-30Hz</small></span>
-                    <span class="value" id="band-beta">-</span>
-                  
-                </li>
-
-                <li class="card band-gamma">
-                    <span class="label">Gamma <small>30-100Hz</small></span>
-                    <span class="value" id="band-gamma">-</span>
-                    
-                </li>
-            </ul>
+        <section>
+            <h2>Rekomendasi Aksi</h2>
+            <div id="rekomendasi">Memuat...</div>
         </section>
 
         <button id="downloadCsvBtn">Unduh Hasil (CSV)</button>

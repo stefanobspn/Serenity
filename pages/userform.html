@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Peserta</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+    <header>
+        <h1>Data Peserta</h1>
+    </header>
+
+    <main>
+        <a class="link-kembali" href="../index.html">&larr; Kembali ke Beranda</a>
+        <p class="langkah">Langkah 1 dari 5</p>
+
+        <p>Sebelum mengisi kuesioner, isi dulu nama kamu.</p>
+
+        <form id="formUser">
+            <fieldset>
+                <legend>Nama Lengkap</legend>
+                <label>Nama
+                    <input type="text" id="inputNama" name="nama" required>
+                </label>
+            </fieldset>
+
+            <button class="btn-lanjut">Lanjut</button>
+        </form>
+    </main>
+
+    <script src="../js/storage.js"></script>
+    <script src="../js/userform.js"></script>
+</body>
+
+</html>

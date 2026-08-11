@@ -129,11 +129,12 @@ form label:hover {
     background: #f0fdda;
 }
 
-#bands {
-    display: flex; 
-    gap: 16px; 
+.bands-list {
+    display: flex;
+    gap: 16px;
     list-style: none;
     padding-left: 0;
+    margin: 8px 0 16px;
 }
 
 .card {
@@ -210,8 +211,3 @@ canvas {
     background: #f0fdda;
 }
 
-#cancelRecordBtn {
-    background: white;
-    color: red;
-    border: 2px solid red;
-}
