@@ -1,7 +1,7 @@
-/* eeg.js — kode utama halaman eeg.html
+/* eeg.js — kode utama halaman eegmonitor.html
    ==========================================================
    Semua urusan Bluetooth, decode sinyal EEG, dan hitung FFT band power
-   sudah ditangani oleh library eksternal MuseSGen2 (lihat eeg.html,
+   sudah ditangani oleh library eksternal MuseSGen2 (lihat eegmonitor.html,
    di-load dari file musesgen2/script.js). Anggap library itu seperti
    "driver hardware": rumit di dalamnya, tapi cara pakainya sederhana —
    kita tinggal dengar beberapa event lewat muse.onXxx(...).
@@ -11,10 +11,10 @@
    2. Menampilkan status koneksi & battery ke halaman
    3. Menampilkan band power ke kartu + grafik garis
    4. Merekam data selama 1 menit, lalu simpan rata-ratanya dan pindah ke
-      halaman Hasil Akhir (lihat hasil.html)
+      halaman Hasil Akhir (lihat hasilakhir.html)
 
    Grafiknya digambar pakai library eksternal Chart.js (di-load dari CDN
-   di eeg.html), diperlakukan sama seperti MuseSGen2: kita cuma isi
+   di eegmonitor.html), diperlakukan sama seperti MuseSGen2: kita cuma isi
    data/options-nya lewat API-nya (chart.data, chart.update(), dst),
    tidak perlu tahu cara Chart.js menggambar garis di dalamnya. */
 
@@ -191,7 +191,7 @@ function selesaiRekam() {
   }
 
   simpanHasilKuesioner('eeg', hasilEeg);
-  window.location.href = 'hasil.html';
+  window.location.href = 'hasilakhir.html';
 }
 
 recordBtn.addEventListener('click', mulaiRekam);
@@ -321,7 +321,7 @@ window.addEventListener('beforeunload', function (event) {
 /* ===== Tombol Demo (khusus development, tanpa headset asli) =====
    Kalau belum ada headset fisik di tangan, tombol ini bikin halaman
    "berpura-pura" terhubung dan mengirim band power acak, supaya sisa alur
-   (kartu, grafik, rekam 1 menit, sampai ke hasil.html) tetap bisa dites. */
+   (kartu, grafik, rekam 1 menit, sampai ke hasilakhir.html) tetap bisa dites. */
 
 // Buat angka band power acak, cuma buat simulasi waktu belum ada headset
 // fisik. Range-nya sekadar mendekati skala data asli, BUKAN data EEG asli.
@@ -342,7 +342,7 @@ demoBtn.addEventListener('click', function () {
 
   // ~2x per detik, mirip kecepatan data asli dari headset. Tidak perlu
   // tombol "stop" — interval ini otomatis berhenti begitu halaman
-  // berpindah (misalnya redirect ke hasil.html setelah rekam selesai).
+  // berpindah (misalnya redirect ke hasilakhir.html setelah rekam selesai).
   var timerDemo = setInterval(function () {
     handleBandPower(buatDataDummy());
   }, 500);

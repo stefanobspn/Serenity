@@ -33,5 +33,5 @@ form.addEventListener('submit', function (event) {
 
   simpanHasilKuesioner('pss5', { skor: skor, status: status, jawaban: jawaban });
 
-  window.location.href = 'kuesioner-makan.html';
+  window.location.href = 'sees10.html';
 });

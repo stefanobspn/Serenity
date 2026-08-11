@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Akhir</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+    <header>
+        <h1>Hasil Akhir</h1>
+    </header>
+
+    <main>
+        <section>
+            <h2>Ringkasan Kuesioner</h2>
+            <div id="ringkasan-kuesioner">Memuat...</div>
+        </section>
+
+        <section>
+            <h2>Hasil EEG (Band Power)</h2>
+            <p id="eegKosong" class="catatan" hidden>Belum ada data EEG</p>
+
+            <ul id="bands">
+                <li class="card band-delta">
+                    <span class="label">Delta <small>0.5-4Hz</small></span>
+                    <span class="value" id="band-delta">-</span>
+                    
+                </li>
+
+                <li class="card band-theta">
+                    <span class="label">Theta <small>4-8Hz</small></span>
+                    <span class="value" id="band-theta">-</span>
+                    
+                </li>
+
+                <li class="card band-alpha">
+                    <span class="label">Alpha <small>8-13Hz</small></span>
+                    <span class="value" id="band-alpha">-</span>
+                    
+                </li>
+
+                <li class="card band-beta">
+                    <span class="label">Beta <small>13-30Hz</small></span>
+                    <span class="value" id="band-beta">-</span>
+                  
+                </li>
+
+                <li class="card band-gamma">
+                    <span class="label">Gamma <small>30-100Hz</small></span>
+                    <span class="value" id="band-gamma">-</span>
+                    
+                </li>
+            </ul>
+        </section>
+
+        <button id="downloadCsvBtn">Unduh Hasil (CSV)</button>
+        <button id="mulaiLagiBtn">Mulai Sesi Baru</button>
+
+    </main>
+
+    <script src="../js/storage.js"></script>
+    <script src="../js/hasil.js"></script>
+</body>
+
+</html>

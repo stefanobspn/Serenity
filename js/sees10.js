@@ -1,4 +1,4 @@
-/* sees10.js — logika halaman kuesioner-makan.html (SEES-10, emotional eating)
+/* sees10.js — logika halaman sees10.html (SEES-10, emotional eating)
    ==========================================================
    Tugas file ini:
    1. Hitung rata-rata dari 10 jawaban (tiap jawaban bernilai 1-5)
@@ -38,5 +38,5 @@ form.addEventListener('submit', function (event) {
 
   simpanHasilKuesioner('sees10', { rataRata: rataRata, status: status, jawaban: jawaban });
 
-  window.location.href = 'kuesioner-lapar.html';
+  window.location.href = 'hungerscale.html';
 });

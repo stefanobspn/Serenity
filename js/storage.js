@@ -1,8 +1,8 @@
 /* storage.js — helper kecil buat simpan & ambil hasil kuesioner
    ==========================================================
    Dipakai bareng-bareng oleh halaman kuesioner (pss5.html,
-   kuesioner-makan.html, kuesioner-lapar.html) dan halaman monitor EEG
-   (eeg.html), supaya cara baca/tulis localStorage-nya konsisten dan
+   sees10.html, hungerscale.html) dan halaman monitor EEG
+   (eegmonitor.html), supaya cara baca/tulis localStorage-nya konsisten dan
    tidak perlu ditulis ulang di tiap halaman.
 
    localStorage itu "penyimpanan" kecil di browser yang isinya tetap ada

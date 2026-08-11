@@ -1,311 +1,217 @@
 :root {
-  --color-primary: #2a9d8f;
-  --color-primary-hover: #23897d;
+    --color-primary: #2a9d8f;
+    --color-primary-hover: #23897d;
 }
 
 body {
-  font-family: system-ui, sans-serif;
-  max-width: 960px;
-  margin: 30px auto;
-  padding: 0 16px;
-  color: #222;
-  /* Jarak antar baris teks. Tanpa ini, browser pakai jarak bawaan yang
-     rapat (~1.2x), jadi kalau teksnya panjang dan turun ke baris kedua
-     (misal pilihan jawaban kuesioner), baris-barisnya kelihatan
-     menempel satu sama lain. */
-  line-height: 1.5;
+    font-family: system-ui, sans-serif;
+    max-width: 960px;
+    margin: 30px auto;
+    padding: 0 16px; 
+    color: #222; 
+    line-height: 1.5;
 }
-
-/* Elemen yang punya atribut hidden harus SELALU tersembunyi, walaupun
-   ada class lain (misalnya .btn-mulai) yang juga mengatur properti
-   display. Tanpa baris ini, aturan display dari class bisa menang dan
-   bikin elemen yang seharusnya hidden malah kelihatan lagi. */
-[hidden] {
-  display: none !important;
-}
-
-h1 {
-  font-size: 22px;
-}
-
-#status {
-  font-size: 16px;
-  margin-top: 12px;
-}
-
-/* Dipasang lewat JS (classList.toggle) waktu status koneksi = 'error',
-   supaya error tidak kelihatan sama seperti status normal semacam
-   "menghubungkan..." */
-#status.status-error {
-  color: #b91c1c;
-  font-weight: bold;
-}
-
-#battery {
-  font-size: 14px;
-  color: #555;
-}
-
-#bands {
-  display: flex;
-  gap: 12px;
-  margin: 16px 0;
-  padding: 0;
-  list-style: none;
-  flex-wrap: wrap;
-}
-
-.card {
-  border-left: 6px solid #ccc;
-  background: #f5f5f5;
-  padding: 8px 14px;
-  border-radius: 4px;
-  min-width: 110px;
-}
-
-.card .label {
-  font-size: 13px;
-  color: #666;
-  display: block;
-}
-
-.card .label small {
-  color: #999;
-  font-weight: normal;
-  font-size: 11px;
-}
-
-.card .value {
-  font-size: 20px;
-  font-weight: bold;
-  display: block;
-}
-
-.bar {
-  margin-top: 6px;
-  height: 6px;
-  width: 100%;
-  background: #e5e5e5;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.bar-fill {
-  display: block;
-  height: 100%;
-  width: 0%;
-  transition: width 0.2s ease;
-}
-
-/* Warna khas tiap band gelombang otak.
-   Dipakai di dua tempat: garis kiri kartu (.card) dan isi bar (.bar-fill),
-   makanya ditulis terpisah per elemen supaya tidak menimpa warna
-   background kartu yang sudah diatur di aturan .card di atas. */
-.card.band-delta { border-left-color: #3b82f6; }
-.bar-fill.band-delta { background: #3b82f6; }
-
-.card.band-theta { border-left-color: #8b5cf6; }
-.bar-fill.band-theta { background: #8b5cf6; }
-
-.card.band-alpha { border-left-color: #10b981; }
-.bar-fill.band-alpha { background: #10b981; }
-
-.card.band-beta { border-left-color: #f59e0b; }
-.bar-fill.band-beta { background: #f59e0b; }
-
-.card.band-gamma { border-left-color: #ef4444; }
-.bar-fill.band-gamma { background: #ef4444; }
-
-canvas {
-  width: 100%;
-  max-width: 900px;
-  height: 320px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  display: block;
-}
-
-figure {
-  margin: 0;
-}
-
-figcaption {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #888;
-}
-
-/* Catatan kecil (mis. prasyarat sebelum connect, penjelasan istilah) */
-.catatan {
-  font-size: 13px;
-  color: #666;
-  background: #f5f5f5;
-  padding: 8px 12px;
-  border-radius: 6px;
-  margin: 8px 0;
-}
-
-/* ===== Landing page (index.html) ===== */
 
 .landing {
-  text-align: center;
-  margin-top: 80px;
+    text-align: center; 
+    margin-top: 80px; 
 }
 
 .landing p {
-  max-width: 500px;
-  margin: 16px auto 32px;
-  color: #555;
-  line-height: 1.5;
+    max-width: 500px; 
+    margin: 16px auto 32px; 
+    color: #555;
 }
 
 .btn-mulai {
-  display: inline-block;
-  font-size: 18px;
-  padding: 14px 32px;
-  background: var(--color-primary);
-  color: white;
-  text-decoration: none;
-  /* <a> otomatis tidak ada border tebal & kursornya sudah pointer,
-     tapi class ini sekarang juga dipakai di banyak <button> asli,
-     jadi dua hal itu perlu ditulis eksplisit di sini. */
-  border: none;
-  cursor: pointer;
-  border-radius: 6px;
+    font-size: 18px; 
+    padding: 16px 32px;
+    background: var(--color-primary);
+    color: white; 
+    cursor: pointer;
+    border-radius: 8px;
 }
 
 .btn-mulai:hover {
-  background: var(--color-primary-hover);
+    background: var(--color-primary-hover)
 }
 
-/* .btn-mulai juga dipakai pada <button> (bukan cuma <a>), misalnya tombol
-   "Mulai Rekam" yang sengaja dikunci sampai headset terhubung. Tanpa ini,
-   tombol yang di-disable lewat JS/HTML tetap kelihatan teal & bisa
-   ditekan, padahal klik-nya tidak akan berpengaruh. */
-.btn-mulai:disabled {
-  background: #aaa;
-  cursor: default;
+h1 {
+    font-size: 24px;
 }
 
-/* ===== Form kuesioner (pss5.html, kuesioner-makan.html, kuesioner-lapar.html) ===== */
-
-/* Penanda "Langkah X dari 3", supaya peserta tahu masih berapa lama lagi */
-.langkah {
-  color: #888;
-  font-size: 13px;
-  margin: -8px 0 16px;
-}
-
-/* Link kembali ke halaman sebelumnya */
 .link-kembali {
-  display: inline-block;
-  margin-bottom: 12px;
-  color: var(--color-primary);
-  text-decoration: none;
-  font-size: 14px;
+    color: var(--color-primary);
+    text-decoration: none; 
+    font-size: 16px;
 }
 
 .link-kembali:hover {
-  text-decoration: underline;
+    text-decoration: underline;
+}
+
+.langkah {
+    color: #888;
+    font-size: 13px; 
+    margin: 1px 0 16px; 
 }
 
 form fieldset {
-  margin: 0 0 20px;
-  padding: 16px 20px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+    margin-bottom: 24px;
+    padding: 16px 32px; 
+    border: 1px solid #ddd; 
+    border-radius: 6px;
 }
 
 form legend {
-  font-weight: bold;
-  padding: 0 6px;
-  margin-bottom: 4px;
+    font-weight: bold; 
 }
 
-/* Satu pilihan jawaban per baris (bukan disambung ke samping), supaya
-   pilihan dengan teks panjang tidak menempel dengan pilihan lain di
-   sebelahnya. Padding dipakai (bukan cuma margin) supaya area yang
-   bisa diklik lebih besar dari sekadar bulatan radio-nya. */
 form label {
-  display: block;
-  padding: 6px 8px;
-  margin: 2px 0;
-  border-radius: 4px;
-  cursor: pointer;
+    display: block;
+    padding: 16px; 
+    cursor: pointer; 
+    border-radius: 4px;
 }
 
 form label:hover {
-  background: #f0f0f0;
+    background: #f0f0f0;
 }
 
-form input[type="radio"] {
-  margin-right: 8px;
+.btn-lanjut {
+    font-size: 18px; 
+    padding: 16px 32px; 
+    background: var(--color-primary);
+    color: white;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
 }
 
-/* ===== Ringkasan kuesioner (eeg.html) ===== */
-
-#ringkasan-kuesioner {
-  background: #f5f5f5;
-  border-radius: 6px;
-  padding: 12px 16px;
+.btn-lanjut:hover {
+    background: var(--color-primary-hover);
 }
 
-#ringkasan-kuesioner ul {
-  margin: 0;
-  padding-left: 20px;
+.catatan {
+    font-size: 13px;
+    color: #666;
+    background: #f5f5f5;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin: 8px 0;
 }
 
-/* ===== Feedback & aksi akhir (hasil.html) ===== */
-
-#feedbackInput {
-  width: 100%;
-  max-width: 600px;
-  font: inherit;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  resize: vertical;
-  box-sizing: border-box; /* biar padding tidak bikin lebar melebihi 100% */
+.btn-connect {
+    font-size: 16px;
+    padding: 16px 24px;
+    margin-top: 8px;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
 }
 
-#feedbackInput:focus {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 1px;
+.btn-dummy {
+    font-size: 16px;
+    padding: 16px 24px;
+    cursor: pointer;
+    color: var(--color-primary);
+    border: 2px solid var(--color-primary);
+    border-radius: 8px;
 }
 
-/* Kotak buat menaruh beberapa tombol berdampingan, dengan jarak yang
-   sama di antara mereka. Dipakai di eeg.html (Connect + Demo, dan
-   Mulai Rekam + Batalkan) dan hasil.html (Unduh CSV + Mulai Sesi Baru) —
-   satu aturan jarak buat semua tempat yang punya lebih dari satu tombol. */
-.tombol-baris {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+.btn-connect:hover {
+    background: var(--color-primary-hover);
 }
 
-/* Versi outline dari .btn-mulai, dipakai buat aksi yang bukan aksi utama
-   halaman (unduh CSV, demo tanpa headset), supaya tidak semencolok
-   tombol aksi utamanya. */
-.btn-mulai.btn-sekunder {
-  background: #fff;
-  color: var(--color-primary);
-  border: 1px solid var(--color-primary);
+.btn-dummy:hover {
+    background: #f0fdda;
 }
 
-.btn-mulai.btn-sekunder:hover {
-  background: #f0fdfa;
+#bands {
+    display: flex; 
+    gap: 16px; 
+    list-style: none;
+    padding-left: 0;
 }
 
-/* Versi "hati-hati" dari .btn-mulai, dipakai buat aksi yang membatalkan
-   sesuatu yang sedang berjalan (batal rekam). Triknya sama seperti
-   .btn-sekunder di atas: bentuk kotaknya tetap dari .btn-mulai, cuma
-   warnanya diganti jadi merah supaya kelihatan beda dari aksi biasa. */
-.btn-mulai.btn-bahaya {
-  background: #fff;
-  color: #b91c1c;
-  border: 1px solid #b91c1c;
+.card {
+    background: #f5f5f5;
+    padding: 8px 16px;
+    border-radius: 8px;
+    min-width: 110px;
+    border-left: 6px solid; 
 }
 
-.btn-mulai.btn-bahaya:hover {
-  background: #fef2f2;
+.card .label small {
+    color: #999; 
+    font-weight: normal; 
+    font-size: 11px; 
+}
+
+.card .value {
+    font-size: 20px; 
+    font-weight: bold; 
+    display: block;
+}
+
+.card.band-delta { border-left-color: #3b82f6}
+.card.band-theta { border-left-color: #8b5cf6}
+.card.band-alpha { border-left-color: #10b981}
+.card.band-beta { border-left-color: #f59e0b}
+.card.band-gamma { border-left-color: #ef4444}
+
+figure {
+    margin-left: 0;
+}
+
+canvas {
+    border: 1px solid #ddd; 
+    border-radius: 6px; 
+}
+
+.btn-rekam {
+    font-size: 16px;
+    padding: 16px 24px;
+    margin-top: 8px;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+#downloadCsvBtn {
+    font-size: 16px;
+    padding: 16px 24px;
+    margin-top: 8px;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+#mulaiLagiBtn {
+    font-size: 16px;
+    padding: 16px 24px;
+    cursor: pointer;
+    color: var(--color-primary);
+    border: 2px solid var(--color-primary);
+    border-radius: 8px;
+}
+
+#downloadCsvBtn:hover {
+    background: var(--color-primary-hover);
+}
+
+#mulaiLagiBtn:hover {
+    background: #f0fdda;
+}
+
+#cancelRecordBtn {
+    background: white;
+    color: red;
+    border: 2px solid red;
 }

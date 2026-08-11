@@ -1,4 +1,4 @@
-/* hunger.js — logika halaman kuesioner-lapar.html (Hunger Scale)
+/* hunger.js — logika halaman hungerscale.html (Hunger Scale)
    ==========================================================
    Tugas file ini:
    1. Ambil angka yang dipilih peserta (1-10, makin rendah makin lapar)
@@ -22,5 +22,5 @@ form.addEventListener('submit', function (event) {
   // konsisten dengan pss5.js & sees10.js dan bisa dipulihkan muatJawabanTersimpan()
   simpanHasilKuesioner('hunger', { skor: skor, jawaban: { q1: skor } });
 
-  window.location.href = 'eeg.html';
+  window.location.href = 'eegmonitor.html';
 });

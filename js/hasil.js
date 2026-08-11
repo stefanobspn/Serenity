@@ -1,8 +1,8 @@
-/* hasil.js — logika halaman hasil.html (Hasil Akhir)
+/* hasil.js — logika halaman hasilakhir.html (Hasil Akhir)
    ==========================================================
    Halaman ini murni menampilkan data yang sudah tersimpan di localStorage
    (lewat storage.js) dari halaman-halaman sebelumnya: 3 kuesioner dan
-   rata-rata band power dari sesi rekam 1 menit di eeg.html. Tidak ada
+   rata-rata band power dari sesi rekam 1 menit di eegmonitor.html. Tidak ada
    koneksi Bluetooth atau library eksternal di sini sama sekali. */
 
 
@@ -107,7 +107,7 @@ function escapeNilaiCsv(nilai) {
 // dan nilainya selalu nempel jadi satu, tidak mungkin kegeser saling
 // tidak sinkron kalau nanti ada yang menambah kolom baru.
 //
-// Kalau satu bagian belum pernah diisi (misal hasil.html dibuka langsung
+// Kalau satu bagian belum pernah diisi (misal hasilakhir.html dibuka langsung
 // tanpa lewat alur kuesioner), nilainya diisi string kosong '' supaya
 // tetap menghasilkan CSV yang valid, bukan error.
 function siapkanDataCsv() {
