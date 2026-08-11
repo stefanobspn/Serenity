@@ -22,6 +22,7 @@
 
 // --- Konstanta ---
 var MAX_POINTS = 60; // jumlah titik riwayat yang ditampilkan di grafik
+var INTERVAL_DETIK = 10; // tiap berapa detik satu titik data interval disimpan (lihat "Sesi Rekam" di bawah)
 
 
 // --- Ambil elemen-elemen HTML yang isinya akan kita ubah lewat JS ---
@@ -136,21 +137,54 @@ var chart = new Chart(document.getElementById('eegChart').getContext('2d'), {
    jendela waktu itu — supaya hasilnya lebih mewakili kondisi peserta,
    bukan cuma kebetulan satu titik data. Tidak ada batas waktu tetap —
    lama rekaman terserah peserta/peneliti, cuma waktu yang sudah berjalan
-   ditampilkan di layar (lihat mulaiRekam). */
+   ditampilkan di layar (lihat mulaiRekam).
+
+   Selain rata-rata keseluruhan sesi itu, kita JUGA menyimpan rata-rata per
+   potongan waktu INTERVAL_DETIK detik (lihat array intervalHasil) — supaya
+   halaman Hasil Akhir bisa menunjukkan tren band power sepanjang sesi
+   (dipakai juga untuk cari puncak gelombang Alpha, bukan cuma rata-ratanya
+   — lihat docs/RingkasanKarya.md), bukan cuma satu angka datar. Dua
+   akumulator ini jalan berbarengan: satu untuk seluruh sesi (jumlahBandPower
+   / jumlahSampel), satu lagi untuk potongan waktu yang sedang berjalan
+   (jumlahBandPowerInterval / jumlahSampelInterval), yang di-reset tiap kali
+   genap INTERVAL_DETIK detik. */
 
 var sedangMerekam = false;
 var waktuBerjalanDetik = 0;
 var timerRekam = null; // penampung id dari setInterval, supaya bisa dibatalkan
 var jumlahBandPower = {}; // total penjumlahan tiap band selama rekaman
 var jumlahSampel = 0; // berapa kali onBandPower menembak selama rekaman
+var jumlahBandPowerInterval = {}; // total penjumlahan tiap band, direset tiap INTERVAL_DETIK detik
+var jumlahSampelInterval = 0; // jumlah sampel di potongan waktu yang sedang berjalan
+var intervalHasil = []; // daftar titik data { detik, delta, theta, alpha, beta, gamma } sepanjang sesi
+
+// Hitung rata-rata potongan waktu yang sedang berjalan, simpan sebagai satu
+// titik data di intervalHasil, lalu kosongkan akumulatornya supaya siap
+// menghitung potongan waktu berikutnya. Dipanggil tiap genap INTERVAL_DETIK
+// detik (lihat timerRekam di bawah), dan sekali lagi di selesaiRekam() untuk
+// menyimpan sisa potongan terakhir yang belum genap INTERVAL_DETIK detik.
+function flushIntervalBucket() {
+  if (jumlahSampelInterval === 0) return; // tidak ada data masuk di potongan ini, jangan simpan titik kosong
+
+  var titik = { detik: waktuBerjalanDetik };
+  MuseSGen2.BANDS.forEach(function (band) {
+    titik[band.key] = jumlahBandPowerInterval[band.key] / jumlahSampelInterval;
+    jumlahBandPowerInterval[band.key] = 0;
+  });
+  intervalHasil.push(titik);
+  jumlahSampelInterval = 0;
+}
 
 // Bersiap merekam: kosongkan akumulator, kunci tombol, mulai hitung waktu
 // berjalan (naik terus sampai peserta menekan "Stop Rekam").
 function mulaiRekam() {
   MuseSGen2.BANDS.forEach(function (band) {
     jumlahBandPower[band.key] = 0;
+    jumlahBandPowerInterval[band.key] = 0;
   });
   jumlahSampel = 0;
+  jumlahSampelInterval = 0;
+  intervalHasil = [];
 
   sedangMerekam = true;
   recordBtn.disabled = true;
@@ -162,6 +196,10 @@ function mulaiRekam() {
   timerRekam = setInterval(function () {
     waktuBerjalanDetik++;
     recordStatusEl.textContent = 'Merekam... ' + waktuBerjalanDetik + ' detik berjalan';
+
+    if (waktuBerjalanDetik % INTERVAL_DETIK === 0) {
+      flushIntervalBucket();
+    }
   }, 1000);
 }
 recordBtn.addEventListener('click', mulaiRekam);
@@ -180,6 +218,8 @@ function selesaiRekam() {
   sedangMerekam = false;
   stopRecordBtn.hidden = true;
 
+  flushIntervalBucket(); // simpan sisa potongan waktu terakhir walau belum genap INTERVAL_DETIK detik
+
   var hasilEeg = null;
 
   if (jumlahSampel > 0) {
@@ -191,6 +231,9 @@ function selesaiRekam() {
       // rasio Theta/Beta secara presisi, tanpa harus parsing balik teks.
       hasilEeg[band.key] = { value: MuseSGen2.formatPower(rataRata), raw: rataRata };
     });
+    // Titik-titik data per INTERVAL_DETIK detik sepanjang sesi ini, dipakai
+    // halaman Hasil Akhir untuk grafik tren dan untuk cari puncak Alpha.
+    hasilEeg.interval = intervalHasil;
   }
 
   if (tahapEeg === 1) {
@@ -271,8 +314,10 @@ function tambahSampelJikaSedangRekam(powers) {
 
   MuseSGen2.BANDS.forEach(function (band) {
     jumlahBandPower[band.key] += powers[band.key];
+    jumlahBandPowerInterval[band.key] += powers[band.key];
   });
   jumlahSampel++;
+  jumlahSampelInterval++;
 }
 
 // Data band power baru datang (dikirim library beberapa kali per detik).

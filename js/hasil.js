@@ -58,6 +58,51 @@ function tampilkanRingkasanKuesioner() {
 
 var BAND_KEYS = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
 
+// Label & warna tiap band, dipakai buat gambar grafik tren (lihat
+// gambarGrafikEeg di bawah). Warnanya sengaja disamakan persis dengan
+// MuseSGen2.BANDS yang dipakai grafik live di eegmonitor.html — tapi
+// ditulis ulang di sini (bukan dipakai langsung dari situ) karena halaman
+// Hasil Akhir ini tidak memuat library musesgen2/script.js sama sekali.
+var BAND_INFO = [
+  { key: 'delta', label: 'Delta', color: '#3b82f6' },
+  { key: 'theta', label: 'Theta', color: '#8b5cf6' },
+  { key: 'alpha', label: 'Alpha', color: '#10b981' },
+  { key: 'beta', label: 'Beta', color: '#f59e0b' },
+  { key: 'gamma', label: 'Gamma', color: '#ef4444' }
+];
+
+// Gambar satu grafik garis tren band power sepanjang satu sesi rekam (EEG 1
+// atau EEG 2), dari titik-titik data per-interval yang disimpan eeg.js
+// (lihat dataEeg.interval, tiap titik = rata-rata INTERVAL_DETIK detik).
+// Beda dengan grafik live di eeg.js: grafik di sini statis, semua datanya
+// sudah lengkap begitu halaman ini dibuka, jadi tidak perlu logic
+// tambah-titik/geser-titik seperti grafik live itu.
+function gambarGrafikEeg(prefix, dataEeg) {
+  var titikTitik = dataEeg.interval;
+
+  new Chart(document.getElementById('eegChart-' + prefix).getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: titikTitik.map(function (titik) { return titik.detik + 's'; }),
+      datasets: BAND_INFO.map(function (band) {
+        return {
+          label: band.label,
+          data: titikTitik.map(function (titik) { return titik[band.key]; }),
+          borderColor: band.color,
+          backgroundColor: band.color,
+          borderWidth: 2,
+          pointRadius: 2,
+          tension: 0.25
+        };
+      })
+    },
+    options: {
+      scales: { y: { beginAtZero: true } },
+      plugins: { legend: { position: 'top', labels: { boxWidth: 12 } } }
+    }
+  });
+}
+
 // Isi satu set kartu band (EEG 1 atau EEG 2) — prefix contohnya 'eeg1'
 // atau 'eeg2', dipakai buat cocokin id="band-eeg1-delta" dst di HTML.
 function isiKartuBand(prefix, dataEeg) {
@@ -78,14 +123,14 @@ function hitungVerdictStres(eeg1, eeg2) {
   return { arah: arah, rasio1: rasio1, rasio2: rasio2 };
 }
 
-// Bandingkan power Alpha EEG 1 vs EEG 2 sebagai sinyal rasa lapar
-// (berdasarkan gelombang Alpha, per docs/RingkasanKarya.md). Catatan: ini
-// versi sederhana dari "puncak gelombang Alpha" di proposal, karena
-// aplikasi ini cuma punya rata-rata band power, bukan spektrum frekuensi
-// penuh — kalau butuh lebih presisi, ini bagian yang perlu diganti.
+// Bandingkan PUNCAK power Alpha EEG 1 vs EEG 2 sebagai sinyal rasa lapar,
+// sesuai docs/RingkasanKarya.md ("berdasarkan puncak gelombang Alpha").
+// Dipakai nilai maksimum dari titik-titik data per-interval (dataEeg.interval,
+// lihat eeg.js), bukan rata-rata keseluruhan sesi — karena rata-rata bisa
+// meratakan/menyembunyikan puncak yang cuma muncul sesaat di tengah sesi.
 function hitungVerdictLapar(eeg1, eeg2) {
-  var alpha1 = eeg1.alpha.raw;
-  var alpha2 = eeg2.alpha.raw;
+  var alpha1 = Math.max.apply(null, eeg1.interval.map(function (titik) { return titik.alpha; }));
+  var alpha2 = Math.max.apply(null, eeg2.interval.map(function (titik) { return titik.alpha; }));
   var arah = alpha2 > alpha1 ? 'naik' : (alpha2 < alpha1 ? 'turun' : 'stabil');
   return { arah: arah, alpha1: alpha1, alpha2: alpha2 };
 }
@@ -97,9 +142,9 @@ function teksVerdictStres(v) {
 }
 
 function teksVerdictLapar(v) {
-  if (v.arah === 'naik') return 'Gelombang Alpha meningkat setelah aktivitas — bisa jadi tanda rasa lapar berkurang.';
-  if (v.arah === 'turun') return 'Gelombang Alpha menurun setelah aktivitas — bisa jadi tanda rasa lapar bertambah.';
-  return 'Gelombang Alpha relatif stabil setelah aktivitas.';
+  if (v.arah === 'naik') return 'Puncak gelombang Alpha meningkat setelah aktivitas — bisa jadi tanda rasa lapar berkurang.';
+  if (v.arah === 'turun') return 'Puncak gelombang Alpha menurun setelah aktivitas — bisa jadi tanda rasa lapar bertambah.';
+  return 'Puncak gelombang Alpha relatif stabil setelah aktivitas.';
 }
 
 function tampilkanHasilEeg() {
@@ -121,6 +166,8 @@ function tampilkanHasilEeg() {
 
   isiKartuBand('eeg1', hasil.eeg1);
   isiKartuBand('eeg2', hasil.eeg2);
+  gambarGrafikEeg('eeg1', hasil.eeg1);
+  gambarGrafikEeg('eeg2', hasil.eeg2);
 
   document.getElementById('verdictStres').textContent = teksVerdictStres(hitungVerdictStres(hasil.eeg1, hasil.eeg2));
   document.getElementById('verdictLapar').textContent = teksVerdictLapar(hitungVerdictLapar(hasil.eeg1, hasil.eeg2));
@@ -277,11 +324,73 @@ function unduhCsv() {
 }
 
 
+/* ===== Unduh CSV Interval (titik data per INTERVAL_DETIK detik, EEG 1 & 2) =====
+   File terpisah dari CSV ringkasan di atas, sengaja tidak digabung. CSV
+   ringkasan itu format "lebar" (satu baris = satu peserta) supaya beberapa
+   file dari beberapa peserta bisa ditumpuk jadi satu spreadsheet — kalau
+   titik-titik interval dipaksa jadi kolom di situ, jumlah kolomnya beda-beda
+   tiap peserta (tergantung lama rekam), dan itu akan merusak kemampuan
+   "ditumpuk" tadi. Makanya data interval dipakai format "panjang" sendiri:
+   satu baris per titik data, dengan kolom "sesi" (eeg1/eeg2) yang menandai
+   itu titik dari rekaman yang mana. */
+
+// Kumpulkan satu baris per titik interval dari EEG 1 dan EEG 2.
+function siapkanDataCsvInterval() {
+  var hasil = ambilHasilKuesioner();
+  var nama = hasil.peserta ? hasil.peserta.nama : '';
+  var barisBarisData = [];
+
+  ['eeg1', 'eeg2'].forEach(function (sesi) {
+    var dataEeg = hasil[sesi];
+    if (!dataEeg) return;
+
+    dataEeg.interval.forEach(function (titik) {
+      barisBarisData.push([
+        nama,
+        sesi,
+        titik.detik,
+        titik.delta.toFixed(3),
+        titik.theta.toFixed(3),
+        titik.alpha.toFixed(3),
+        titik.beta.toFixed(3),
+        titik.gamma.toFixed(3)
+      ]);
+    });
+  });
+
+  return barisBarisData;
+}
+
+function buatTeksCsvInterval() {
+  var header = ['nama_peserta', 'sesi', 'detik', 'delta', 'theta', 'alpha', 'beta', 'gamma'];
+  var semuaBaris = [header].concat(siapkanDataCsvInterval());
+
+  return semuaBaris.map(function (baris) {
+    return baris.map(escapeNilaiCsv).join(',');
+  }).join('\n');
+}
+
+// Sama persis polanya dengan unduhCsv() di atas, cuma isi & nama filenya beda.
+function unduhCsvInterval() {
+  var teksCsv = '﻿' + buatTeksCsvInterval();
+  var blob = new Blob([teksCsv], { type: 'text/csv;charset=utf-8' });
+
+  var urlSementara = URL.createObjectURL(blob);
+  var link = document.createElement('a');
+  link.href = urlSementara;
+  link.download = 'serenity-interval-' + Date.now() + '.csv';
+  link.click();
+
+  URL.revokeObjectURL(urlSementara);
+}
+
+
 tampilkanRingkasanKuesioner();
 tampilkanHasilEeg();
 tampilkanRekomendasi();
 
 document.getElementById('downloadCsvBtn').addEventListener('click', unduhCsv);
+document.getElementById('downloadCsvIntervalBtn').addEventListener('click', unduhCsvInterval);
 
 
 /* ===== Tombol "Mulai Sesi Baru" ===== */
