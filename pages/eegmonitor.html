@@ -19,31 +19,47 @@
 
         <section>
             <h2>Koneksi</h2>
-            <p class="catatan">Sebelum menekan tombol ini: pastikan headset Muse S Gen 2 sudah
-                menyala dan siap dipasangkan.</p>
 
-            <button id="connectBtn" class="btn-connect">Connect ke Muse</button>
+            <button id="connectBtn" class="btn-connect">Sambungkan Ulang</button>
             <button id="demoBtn" class="btn-dummy">Demo (Data Dummy)</button>
 
             <p class="catatan">Tombol "Demo" cuma buat development/testing waktu belum ada
-                headset fisik. Akan mengisi status & band power pakai angka
+                headset fisik. Akan mengisi status &amp; band power pakai angka
                 acak, BUKAN data EEG asli.</p>
             <p id="status">Status: belum terhubung</p>
+            <!-- Bukti bahwa paket dari HP pernah sampai. Sengaja terpisah dari
+                 status di atas, karena yang ini catatan yang menetap. -->
+            <p id="jejakJaringan" class="catatan" hidden></p>
             <p id="battery">Battery -</p>
         </section>
 
         <section>
-            <h2>Gelombang Otak (Band Power)</h2>
-            <p class="catatan">Otak menghasilkan gelombang listrik dengan frekuensi yang beda-beda
-                tergantung kondisinya: Delta dominan saat tidur nyenyak, Theta saat
-                mengantuk/rileks, Alpha saat tenang dan fokus, Beta saat aktif
-                berpikir, dan Gamma saat konsentrasi tinggi.</p>
+            <h2>Kualitas Sinyal</h2>
+            <p class="catatan">Menunjukkan seberapa baik tiap elektroda menempel di kulit kepala.</p>
 
+            <ul id="kualitas" class="kualitas-list">
+                <li>Kualitas sinyal: belum ada data</li>
+            </ul>
+
+            <p id="kualitasPeringatan" class="peringatan" hidden>
+                Ada elektroda yang belum menempel dengan baik. Rapikan posisi headset
+                (dan singkirkan rambut yang terjepit di bawah elektroda) sampai semuanya
+                "bagus", baru mulai merekam.
+            </p>
+
+            <label class="catatan">
+                <input type="checkbox" id="abaikanKualitas">
+                Rekam saja walaupun ada elektroda yang jelek
+            </label>
+        </section>
+
+        <section>
+            <h2>Gelombang Otak (Band Power)</h2>
             <ul id="bands" class="bands-list">
                 <li class="card band-delta">
                     <span class="label">Delta <small>0.5-4Hz</small></span>
                     <span class="value" id="band-delta">-</span>
-                
+
                 </li>
 
                 <li class="card band-theta">
@@ -64,7 +80,7 @@
                 <li class="card band-gamma">
                     <span class="label">Gamma <small>30-100Hz</small></span>
                     <span class="value" id="band-gamma">-</span>
-                
+
                 </li>
             </ul>
         </section>
@@ -77,10 +93,10 @@
         </section>
 
         <section>
-            <h2 id="rekamHeading">Rekam Data — EEG 1 (Baseline)</h2>
-            <p id="rekamInstruksi" class="catatan">Pastikan sudah terhubung ke headset dan band power sudah muncul di
-                atas, baru tekan tombol ini. Perekaman berlangsung 1 menit, lalu
-                kamu otomatis dibawa ke halaman Hasil Akhir.</p>
+            <h2 id="rekamHeading">Rekam Data — EEG 1 </h2>
+            <p id="rekamInstruksi" class="catatan">Pastikan data sudah mengalir dan band power sudah muncul di
+                atas, baru tekan tombol ini. Tekan "Stop Rekam" kapan saja untuk
+                menyelesaikan sesi ini.</p>
 
             <button id="recordBtn" class="btn-rekam">Mulai Rekam</button>
             <button id="stopRecordBtn" class="btn-rekam" hidden>Stop Rekam</button>
@@ -90,9 +106,9 @@
 
     </main>
 
-    <script src="https://cdn.jsdelivr.net/gh/enuma-technology/musesgen2@main/script.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
     <script src="../js/storage.js"></script>
+    <script src="../js/bands.js"></script>
     <script src="../js/eeg.js"></script>
 </body>
 

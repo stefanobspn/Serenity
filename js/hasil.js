@@ -56,20 +56,12 @@ function tampilkanRingkasanKuesioner() {
 
 /* ===== Hasil EEG (rata-rata band power dari EEG 1 & EEG 2) ===== */
 
-var BAND_KEYS = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
-
-// Label & warna tiap band, dipakai buat gambar grafik tren (lihat
-// gambarGrafikEeg di bawah). Warnanya sengaja disamakan persis dengan
-// MuseSGen2.BANDS yang dipakai grafik live di eegmonitor.html — tapi
-// ditulis ulang di sini (bukan dipakai langsung dari situ) karena halaman
-// Hasil Akhir ini tidak memuat library musesgen2/script.js sama sekali.
-var BAND_INFO = [
-  { key: 'delta', label: 'Delta', color: '#3b82f6' },
-  { key: 'theta', label: 'Theta', color: '#8b5cf6' },
-  { key: 'alpha', label: 'Alpha', color: '#10b981' },
-  { key: 'beta', label: 'Beta', color: '#f59e0b' },
-  { key: 'gamma', label: 'Gamma', color: '#ef4444' }
-];
+// Daftar band (BANDS) dan daftar namanya saja (BAND_KEYS) datang dari
+// bands.js, yang dimuat duluan di hasilakhir.html. Dulu daftar itu ditulis
+// ulang di file ini, dan warnanya harus dijaga manual supaya sama dengan
+// grafik live di eegmonitor.html. Sekarang dua halaman itu membaca daftar
+// yang sama persis, jadi warna Alpha di sini pasti sama dengan warna Alpha
+// di halaman monitor tanpa perlu diingat-ingat.
 
 // Gambar satu grafik garis tren band power sepanjang satu sesi rekam (EEG 1
 // atau EEG 2), dari titik-titik data per-interval yang disimpan eeg.js
@@ -84,7 +76,7 @@ function gambarGrafikEeg(prefix, dataEeg) {
     type: 'line',
     data: {
       labels: titikTitik.map(function (titik) { return titik.detik + 's'; }),
-      datasets: BAND_INFO.map(function (band) {
+      datasets: BANDS.map(function (band) {
         return {
           label: band.label,
           data: titikTitik.map(function (titik) { return titik[band.key]; }),
@@ -238,9 +230,9 @@ function tampilkanRekomendasi() {
 // Bungkus satu nilai supaya aman dipakai di dalam file CSV. Aturan CSV:
 // kalau nilainya mengandung koma, tanda kutip dua, atau baris baru,
 // seluruh nilai itu harus dibungkus tanda kutip dua, dan tiap tanda kutip
-// dua di dalamnya digandakan jadi dua. Tanpa ini, kolom rekomendasi (yang
-// menggabungkan beberapa kalimat dengan " | ") bisa merusak susunan kolom
-// CSV waktu dibuka di spreadsheet.
+// dua di dalamnya digandakan jadi dua. Tanpa ini, nama peserta yang
+// mengandung koma (misal "Ani, S.Pd") bisa terbaca sebagai dua kolom dan
+// menggeser semua kolom setelahnya waktu file dibuka di spreadsheet.
 function escapeNilaiCsv(nilai) {
   var teks = String(nilai);
   var perluDibungkus = teks.indexOf(',') !== -1 || teks.indexOf('"') !== -1 || teks.indexOf('\n') !== -1;
@@ -248,57 +240,94 @@ function escapeNilaiCsv(nilai) {
   return '"' + teks.replace(/"/g, '""') + '"';
 }
 
-// Kumpulkan semua kolom CSV sebagai daftar pasangan [namaKolom, nilai].
-// Dipakai bentuk pasangan (bukan dua larik terpisah) supaya nama kolom
-// dan nilainya selalu nempel jadi satu, tidak mungkin kegeser saling
-// tidak sinkron kalau nanti ada yang menambah kolom baru.
+/* Bentuk file yang dipakai: format "panjang" (long) — satu baris = satu
+   titik data per INTERVAL_DETIK detik (lihat eeg.js), bukan satu baris =
+   satu peserta. Kolom identitas & kuesioner sengaja diulang sama persis di
+   tiap baris.
+
+   Kenapa begitu, padahal kelihatannya boros? Karena lama rekam tiap peserta
+   tidak pernah sama, jadi jumlah titik datanya juga beda-beda. Kalau tiap
+   titik dijadikan kolom sendiri (detik_10, detik_20, detik_30, ...), peserta
+   yang rekamnya lama akan punya lebih banyak kolom daripada yang sebentar —
+   file antar-peserta jadi tidak seragam dan tidak bisa ditumpuk jadi satu
+   spreadsheet. Dengan format panjang, perbedaan lama rekam ditampung di
+   jumlah BARIS, sementara jumlah kolomnya selalu tetap. Menumpuk file
+   beberapa peserta tinggal menempelkan barisnya ke bawah.
+
+   Angka olahan (rata-rata band, rasio Theta/Beta, verdict) sengaja tidak
+   ikut diekspor: semuanya bisa dihitung ulang di spreadsheet dari kolom
+   mentah di file ini (AVERAGE untuk rata-rata, kolom theta dibagi kolom
+   beta untuk rasio, MAX untuk puncak Alpha). Yang disimpan di sini cukup
+   data mentahnya saja. */
+
+// Kumpulkan satu baris data per titik interval dari EEG 1 dan EEG 2.
 //
-// Kalau satu bagian belum pernah diisi (misal hasilakhir.html dibuka langsung
-// tanpa lewat alur kuesioner), nilainya diisi string kosong '' supaya
-// tetap menghasilkan CSV yang valid, bukan error.
+// Kalau satu bagian kuesioner belum pernah diisi (misal hasilakhir.html
+// dibuka langsung tanpa lewat alur kuesioner), nilainya diisi string kosong
+// '' supaya tetap menghasilkan CSV yang valid, bukan error.
 function siapkanDataCsv() {
   var hasil = ambilHasilKuesioner();
-  var adaKeduaEeg = hasil.eeg1 && hasil.eeg2;
-  var verdictStresData = adaKeduaEeg ? hitungVerdictStres(hasil.eeg1, hasil.eeg2) : null;
-  var verdictLaparData = adaKeduaEeg ? hitungVerdictLapar(hasil.eeg1, hasil.eeg2) : null;
 
-  return [
-    ['waktu_unduh', new Date().toLocaleString('id-ID')],
-    ['nama_peserta', hasil.peserta ? hasil.peserta.nama : ''],
-    ['pss5_skor', hasil.pss5 ? hasil.pss5.skor : ''],
-    ['pss5_status', hasil.pss5 ? hasil.pss5.status : ''],
-    ['sees10_rata_rata', hasil.sees10 ? hasil.sees10.rataRata.toFixed(2) : ''],
-    ['sees10_status', hasil.sees10 ? hasil.sees10.status : ''],
-    ['hunger_skor', hasil.hunger ? hasil.hunger.skor : ''],
-    ['eeg1_delta', hasil.eeg1 ? hasil.eeg1.delta.value : ''],
-    ['eeg1_theta', hasil.eeg1 ? hasil.eeg1.theta.value : ''],
-    ['eeg1_alpha', hasil.eeg1 ? hasil.eeg1.alpha.value : ''],
-    ['eeg1_beta', hasil.eeg1 ? hasil.eeg1.beta.value : ''],
-    ['eeg1_gamma', hasil.eeg1 ? hasil.eeg1.gamma.value : ''],
-    ['eeg2_delta', hasil.eeg2 ? hasil.eeg2.delta.value : ''],
-    ['eeg2_theta', hasil.eeg2 ? hasil.eeg2.theta.value : ''],
-    ['eeg2_alpha', hasil.eeg2 ? hasil.eeg2.alpha.value : ''],
-    ['eeg2_beta', hasil.eeg2 ? hasil.eeg2.beta.value : ''],
-    ['eeg2_gamma', hasil.eeg2 ? hasil.eeg2.gamma.value : ''],
-    ['rasio_tb_eeg1', verdictStresData ? verdictStresData.rasio1.toFixed(3) : ''],
-    ['rasio_tb_eeg2', verdictStresData ? verdictStresData.rasio2.toFixed(3) : ''],
-    ['verdict_stres', verdictStresData ? verdictStresData.arah : ''],
-    ['verdict_alpha_lapar', verdictLaparData ? verdictLaparData.arah : ''],
-    ['rekomendasi', buatDaftarRekomendasi(hasil, verdictStresData).join(' | ')]
+  // Waktu unduh diambil SEKALI di sini, bukan di dalam loop di bawah. Kalau
+  // dipanggil per baris, tiap baris bisa dapat detik yang berbeda dan kolom
+  // ini jadi tidak bisa dipakai sebagai penanda "satu file = satu sesi unduh".
+  var waktuUnduh = new Date().toLocaleString('id-ID');
+
+  // Bagian yang nilainya sama untuk semua baris (identitas + kuesioner)
+  // disusun sekali di luar loop, lalu dipakai ulang. Selain lebih hemat,
+  // ini menjamin semua baris benar-benar berisi angka yang sama persis.
+  var kolomPeserta = [
+    waktuUnduh,
+    hasil.peserta ? hasil.peserta.nama : '',
+    hasil.pss5 ? hasil.pss5.skor : '',
+    hasil.pss5 ? hasil.pss5.status : '',
+    hasil.sees10 ? hasil.sees10.rataRata.toFixed(2) : '',
+    hasil.sees10 ? hasil.sees10.status : '',
+    hasil.hunger ? hasil.hunger.skor : ''
   ];
+
+  var barisBarisData = [];
+
+  ['eeg1', 'eeg2'].forEach(function (sesi) {
+    var dataEeg = hasil[sesi];
+    if (!dataEeg) return;
+
+    dataEeg.interval.forEach(function (titik) {
+      // concat() bikin larik BARU tiap baris — kolomPeserta-nya sendiri tidak
+      // ikut berubah, jadi aman dipakai berulang untuk baris berikutnya.
+      barisBarisData.push(kolomPeserta.concat([
+        sesi,
+        titik.detik,
+        titik.delta.toFixed(3),
+        titik.theta.toFixed(3),
+        titik.alpha.toFixed(3),
+        titik.beta.toFixed(3),
+        titik.gamma.toFixed(3)
+      ]));
+    });
+  });
+
+  return barisBarisData;
 }
 
-// Gabungkan data di atas jadi teks CSV: baris pertama nama kolom, baris
-// kedua nilainya (format "wide" — satu peserta = satu baris), supaya
-// beberapa file CSV dari beberapa peserta bisa ditumpuk jadi satu
-// spreadsheet nanti.
+// Gabungkan jadi teks CSV: baris pertama nama kolom, sisanya data.
+// Urutan nama kolom di sini WAJIB sama persis dengan urutan nilai yang
+// disusun siapkanDataCsv() di atas — kalau salah satu diubah, yang satunya
+// harus ikut diubah, kalau tidak isi kolomnya jadi bergeser.
 function buatTeksCsv() {
-  var kolomData = siapkanDataCsv();
+  var header = [
+    'waktu_unduh', 'nama_peserta',
+    'pss5_skor', 'pss5_status',
+    'sees10_rata_rata', 'sees10_status',
+    'hunger_skor',
+    'sesi', 'detik',
+    'delta', 'theta', 'alpha', 'beta', 'gamma'
+  ];
+  var semuaBaris = [header].concat(siapkanDataCsv());
 
-  var barisHeader = kolomData.map(function (pasangan) { return escapeNilaiCsv(pasangan[0]); }).join(',');
-  var barisNilai = kolomData.map(function (pasangan) { return escapeNilaiCsv(pasangan[1]); }).join(',');
-
-  return barisHeader + '\n' + barisNilai;
+  return semuaBaris.map(function (baris) {
+    return baris.map(escapeNilaiCsv).join(',');
+  }).join('\n');
 }
 
 // Buat file CSV di memori (Blob) lalu picu download-nya lewat elemen <a>
@@ -306,7 +335,7 @@ function buatTeksCsv() {
 // dari JS" tanpa perlu link asli yang kelihatan di halaman.
 function unduhCsv() {
   // '﻿' (BOM) di depan teks supaya Excel membaca huruf non-ASCII
-  // (misal dari kolom rekomendasi berbahasa Indonesia) dengan benar, bukan
+  // (misal nama peserta yang pakai huruf beraksen) dengan benar, bukan
   // jadi karakter aneh. Tanpa ini beberapa versi Excel salah tebak encoding-nya.
   var teksCsv = '﻿' + buatTeksCsv();
   var blob = new Blob([teksCsv], { type: 'text/csv;charset=utf-8' });
@@ -314,7 +343,7 @@ function unduhCsv() {
   var urlSementara = URL.createObjectURL(blob);
   var link = document.createElement('a');
   link.href = urlSementara;
-  link.download = 'serenity-hasil-' + Date.now() + '.csv';
+  link.download = 'serenity-data-' + Date.now() + '.csv';
   link.click();
 
   // Lepas alamat sementara tadi — blob URL tidak otomatis dibersihkan
@@ -324,73 +353,33 @@ function unduhCsv() {
 }
 
 
-/* ===== Unduh CSV Interval (titik data per INTERVAL_DETIK detik, EEG 1 & 2) =====
-   File terpisah dari CSV ringkasan di atas, sengaja tidak digabung. CSV
-   ringkasan itu format "lebar" (satu baris = satu peserta) supaya beberapa
-   file dari beberapa peserta bisa ditumpuk jadi satu spreadsheet — kalau
-   titik-titik interval dipaksa jadi kolom di situ, jumlah kolomnya beda-beda
-   tiap peserta (tergantung lama rekam), dan itu akan merusak kemampuan
-   "ditumpuk" tadi. Makanya data interval dipakai format "panjang" sendiri:
-   satu baris per titik data, dengan kolom "sesi" (eeg1/eeg2) yang menandai
-   itu titik dari rekaman yang mana. */
-
-// Kumpulkan satu baris per titik interval dari EEG 1 dan EEG 2.
-function siapkanDataCsvInterval() {
+// Kunci tombol unduh selama belum ada satu pun sesi EEG yang tersimpan.
+//
+// Kenapa dikunci, bukan dibiarkan tetap bisa diklik? Karena isi file ini
+// adalah baris-baris titik data EEG — tanpa data EEG, yang keluar cuma baris
+// nama kolom tanpa isi. File seperti itu gampang dikira rusak, dan yang lebih
+// bahaya: peserta bisa merasa datanya sudah aman terunduh padahal rekamannya
+// belum tersimpan sama sekali. Lebih jujur kalau tombolnya kelihatan mati
+// plus diberi catatan alasannya.
+//
+// Cukup salah satu sesi ada (eeg1 ATAU eeg2), karena satu sesi saja sudah
+// menghasilkan baris data yang valid — kolom "sesi" yang menandai baris itu
+// milik rekaman yang mana.
+function aturTombolUnduh() {
   var hasil = ambilHasilKuesioner();
-  var nama = hasil.peserta ? hasil.peserta.nama : '';
-  var barisBarisData = [];
+  var adaDataEeg = !!(hasil.eeg1 || hasil.eeg2);
 
-  ['eeg1', 'eeg2'].forEach(function (sesi) {
-    var dataEeg = hasil[sesi];
-    if (!dataEeg) return;
-
-    dataEeg.interval.forEach(function (titik) {
-      barisBarisData.push([
-        nama,
-        sesi,
-        titik.detik,
-        titik.delta.toFixed(3),
-        titik.theta.toFixed(3),
-        titik.alpha.toFixed(3),
-        titik.beta.toFixed(3),
-        titik.gamma.toFixed(3)
-      ]);
-    });
-  });
-
-  return barisBarisData;
-}
-
-function buatTeksCsvInterval() {
-  var header = ['nama_peserta', 'sesi', 'detik', 'delta', 'theta', 'alpha', 'beta', 'gamma'];
-  var semuaBaris = [header].concat(siapkanDataCsvInterval());
-
-  return semuaBaris.map(function (baris) {
-    return baris.map(escapeNilaiCsv).join(',');
-  }).join('\n');
-}
-
-// Sama persis polanya dengan unduhCsv() di atas, cuma isi & nama filenya beda.
-function unduhCsvInterval() {
-  var teksCsv = '﻿' + buatTeksCsvInterval();
-  var blob = new Blob([teksCsv], { type: 'text/csv;charset=utf-8' });
-
-  var urlSementara = URL.createObjectURL(blob);
-  var link = document.createElement('a');
-  link.href = urlSementara;
-  link.download = 'serenity-interval-' + Date.now() + '.csv';
-  link.click();
-
-  URL.revokeObjectURL(urlSementara);
+  document.getElementById('downloadCsvBtn').disabled = !adaDataEeg;
+  document.getElementById('csvKosong').hidden = adaDataEeg;
 }
 
 
 tampilkanRingkasanKuesioner();
 tampilkanHasilEeg();
 tampilkanRekomendasi();
+aturTombolUnduh();
 
 document.getElementById('downloadCsvBtn').addEventListener('click', unduhCsv);
-document.getElementById('downloadCsvIntervalBtn').addEventListener('click', unduhCsvInterval);
 
 
 /* ===== Tombol "Mulai Sesi Baru" ===== */

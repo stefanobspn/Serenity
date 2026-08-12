@@ -1,22 +1,43 @@
 /* eeg.js — kode utama halaman eegmonitor.html
    ==========================================================
-   Semua urusan Bluetooth, decode sinyal EEG, dan hitung FFT band power
-   sudah ditangani oleh library eksternal MuseSGen2 (lihat eegmonitor.html,
-   di-load dari file musesgen2/script.js). Anggap library itu seperti
-   "driver hardware": rumit di dalamnya, tapi cara pakainya sederhana —
-   kita tinggal dengar beberapa event lewat muse.onXxx(...).
+   DARI MANA DATA EEG-nya DATANG
 
-   Tugas file ini ada 4:
-   1. Menyambungkan tombol Connect/Disconnect ke library
+   Data EEG di halaman ini datang dari SDK RESMI Muse (libmuse), bukan dari
+   library pihak ketiga. SDK resmi itu native (Java/C++) dan tidak punya versi
+   JavaScript, jadi dia tidak bisa dipanggil langsung dari browser. Alurnya
+   jadi begini:
+
+     Headset Muse
+        |  Bluetooth
+     HP Android (menjalankan SDK resmi)
+        |  OSC over UDP lewat WiFi
+     bridge/relay.js (jalan di laptop)
+        |  SSE (Server-Sent Events)
+     halaman ini
+
+   Kenapa berputar lewat HP dan relay: browser tidak bisa menerima UDP, dan
+   SDK resmi tidak bisa jalan di browser. Penjelasan lengkapnya ada di
+   komentar paling atas bridge/relay.js.
+
+   Bagi file ini, semua kerumitan itu tidak kelihatan. Yang perlu diketahui
+   cuma: ada aliran pesan JSON yang masuk lewat EventSource, isinya band power
+   yang sudah siap pakai. Anggap saja seperti "kabel data" — kita tinggal
+   dengarkan ujungnya.
+
+   Tugas file ini ada 5:
+   1. Menyambung ke aliran data dari relay
    2. Menampilkan status koneksi & battery ke halaman
    3. Menampilkan band power ke kartu + grafik garis
-   4. Merekam data sampai peserta menekan "Stop Rekam", dua kali
-      berturut-turut (EEG 1 lalu EEG 2 — lihat blok "Tahap rekam" di
-      bawah), baru lalu pindah ke halaman Hasil Akhir (lihat hasilakhir.html)
+   4. Menampilkan kualitas kontak elektroda, dan mencegah perekaman
+      dimulai kalau sinyalnya jelek
+   5. Merekam data sampai peserta menekan "Stop Rekam", dua kali berturut-turut
+      (EEG 1 lalu EEG 2 — lihat blok "Tahap rekam" di bawah), baru lalu pindah
+      ke halaman Hasil Akhir (lihat hasilakhir.html)
 
-   Grafiknya digambar pakai library eksternal Chart.js (di-load dari CDN
-   di eegmonitor.html), diperlakukan sama seperti MuseSGen2: kita cuma isi
-   data/options-nya lewat API-nya (chart.data, chart.update(), dst),
+   Daftar band (nama & warna) dan fungsi formatPower diambil dari bands.js,
+   yang dipakai bareng dengan halaman Hasil Akhir. Grafiknya digambar pakai
+   library eksternal Chart.js (di-load dari CDN di eegmonitor.html): kita cuma
+   mengisi data/options-nya lewat API-nya (chart.data, chart.update(), dst),
    tidak perlu tahu cara Chart.js menggambar garis di dalamnya. */
 
 
@@ -24,10 +45,15 @@
 var MAX_POINTS = 60; // jumlah titik riwayat yang ditampilkan di grafik
 var INTERVAL_DETIK = 10; // tiap berapa detik satu titik data interval disimpan (lihat "Sesi Rekam" di bawah)
 
+// Nama elektroda sesuai posisinya di headset, urutannya sama dengan urutan
+// angka yang dikirim SDK resmi lewat /elements/horseshoe.
+var NAMA_ELEKTRODA = ['TP9 (kiri belakang)', 'AF7 (kiri depan)', 'AF8 (kanan depan)', 'TP10 (kanan belakang)'];
+
 
 // --- Ambil elemen-elemen HTML yang isinya akan kita ubah lewat JS ---
 var connectBtn = document.getElementById('connectBtn');
 var statusEl = document.getElementById('status');
+var jejakJaringanEl = document.getElementById('jejakJaringan');
 var batteryEl = document.getElementById('battery');
 var recordBtn = document.getElementById('recordBtn');
 var stopRecordBtn = document.getElementById('stopRecordBtn');
@@ -35,10 +61,9 @@ var recordStatusEl = document.getElementById('recordStatus');
 var demoBtn = document.getElementById('demoBtn');
 var rekamHeadingEl = document.getElementById('rekamHeading');
 var rekamInstruksiEl = document.getElementById('rekamInstruksi');
-
-
-// --- Objek utama dari library MuseSGen2 ---
-var muse = new MuseSGen2();
+var kualitasEl = document.getElementById('kualitas');
+var kualitasPeringatanEl = document.getElementById('kualitasPeringatan');
+var abaikanKualitasEl = document.getElementById('abaikanKualitas');
 
 
 /* ===== Tahap rekam: EEG 1 (baseline) lalu EEG 2 (setelah aktivitas) =====
@@ -47,8 +72,8 @@ var muse = new MuseSGen2();
    EEG 2 (setelah peserta melakukan aktivitas yang diinstruksikan peneliti
    di luar aplikasi ini, misalnya tes memori/aritmatika — lihat
    docs/RingkasanKarya.md). Dipakai dua kali di halaman yang sama (bukan dua
-   halaman terpisah) supaya koneksi Bluetooth ke headset tidak perlu
-   disambung ulang di antara dua rekaman.
+   halaman terpisah) supaya aliran data dari headset tidak perlu disambung
+   ulang di antara dua rekaman.
 
    Nomor tahap dicek dari localStorage waktu halaman dibuka (bukan cuma
    disimpan di variabel), supaya kalau peserta reload halaman di tengah
@@ -59,7 +84,7 @@ var tahapEeg = ambilHasilKuesioner().eeg1 ? 2 : 1;
 function tampilkanTahapEeg() {
   if (tahapEeg === 1) {
     rekamHeadingEl.textContent = 'Rekam Data — EEG 1 (Baseline)';
-    rekamInstruksiEl.textContent = 'Pastikan sudah terhubung ke headset dan band power sudah muncul di atas, baru tekan tombol ini. Tekan "Stop Rekam" kapan saja untuk menyelesaikan sesi ini.';
+    rekamInstruksiEl.textContent = 'Pastikan data sudah mengalir dan band power sudah muncul di atas, baru tekan tombol ini. Tekan "Stop Rekam" kapan saja untuk menyelesaikan sesi ini.';
     recordBtn.textContent = 'Mulai Rekam';
   } else {
     rekamHeadingEl.textContent = 'Rekam Data — EEG 2 (Setelah Aktivitas)';
@@ -70,28 +95,27 @@ function tampilkanTahapEeg() {
 tampilkanTahapEeg();
 
 
-/* ===== Cek dukungan Bluetooth di browser ini =====
-   Fitur Web Bluetooth (yang dipakai library MuseSGen2 buat konek ke
-   headset) cuma didukung Chrome/Edge, dan cuma jalan kalau halamannya
-   dibuka lewat HTTPS (atau localhost). Kalau tidak didukung, mending
-   kasih tahu dari awal daripada tombol Connect ditekan tapi tidak
-   terjadi apa-apa tanpa penjelasan. */
-if (!navigator.bluetooth) {
-  statusEl.textContent = 'Status: browser ini tidak mendukung Bluetooth. Buka halaman ini pakai Chrome atau Edge.';
-  connectBtn.disabled = true;
-}
+/* ===== Cek halaman ini dibuka dengan cara yang benar =====
+   Halaman ini HARUS dibuka lewat http://localhost:8080/... (disajikan oleh
+   bridge/relay.js), bukan dengan klik dua kali file HTML-nya di file manager.
+
+   Kalau dibuka lewat file://, alamat "/eeg-stream" tidak menunjuk ke mana-mana
+   dan datanya tidak akan pernah muncul — tanpa pesan error yang jelas.
+   Karena itu kondisinya dicek dari awal dan dijelaskan apa yang harus
+   dilakukan, daripada peserta bingung menunggu data yang tidak akan datang. */
+var dibukaLewatFile = window.location.protocol === 'file:';
 
 
 /* ===== Bagian Kartu Band Power ===== */
 
 // Update angka di satu kartu band berdasarkan nilai terbaru.
 function updateBandCard(band, value) {
-  document.getElementById('band-' + band.key).textContent = MuseSGen2.formatPower(value);
+  document.getElementById('band-' + band.key).textContent = formatPower(value);
 }
 
-// Kosongkan tampilan semua kartu band (dipanggil saat headset terputus)
+// Kosongkan tampilan semua kartu band (dipanggil saat aliran data terputus)
 function resetBandCards() {
-  MuseSGen2.BANDS.forEach(function (band) {
+  BANDS.forEach(function (band) {
     document.getElementById('band-' + band.key).textContent = '-';
   });
 }
@@ -106,7 +130,7 @@ var chart = new Chart(document.getElementById('eegChart').getContext('2d'), {
   type: 'line',
   data: {
     labels: [],
-    datasets: MuseSGen2.BANDS.map(function (band) {
+    datasets: BANDS.map(function (band) {
       return {
         label: band.label,
         data: [],
@@ -131,6 +155,72 @@ var chart = new Chart(document.getElementById('eegChart').getContext('2d'), {
 });
 
 
+/* ===== Bagian Kualitas Sinyal (elektroda menempel dengan baik atau tidak) =====
+   SDK resmi mengirim nilai "horseshoe"/HSI untuk tiap elektroda:
+   1 = menempel bagus, 2 = sedang, 4 = jelek/lepas.
+
+   Ini penting buat penelitian, bukan cuma hiasan: elektroda yang tidak
+   menempel menghasilkan angka band power yang kelihatan wajar di grafik tapi
+   sebenarnya sampah. Kalau itu ikut terekam, kesimpulan penelitiannya jadi
+   salah tanpa ada tanda-tanda yang kelihatan.
+
+   Makanya tombol "Mulai Rekam" sengaja dikunci selama ada elektroda yang
+   jelek. Tapi disediakan juga centang "abaikan", karena kadang di lapangan
+   ada satu elektroda yang memang susah bagus (rambut tebal, misalnya) dan
+   penelitian tetap harus jalan — lebih baik peneliti memilih itu secara sadar
+   daripada terjebak tidak bisa merekam sama sekali. */
+
+var kualitasSekarang = null; // array 4 angka, atau null kalau belum ada data
+
+function adaElektrodaJelek() {
+  if (!kualitasSekarang) return false;
+  return kualitasSekarang.some(function (nilai) { return nilai > 1; });
+}
+
+function perbaruiKualitas(nilaiKualitas) {
+  kualitasSekarang = nilaiKualitas;
+
+  if (!nilaiKualitas) {
+    kualitasEl.textContent = 'Kualitas sinyal: belum ada data';
+    return;
+  }
+
+  kualitasEl.textContent = ''; // kosongkan tampilan sebelumnya
+
+  nilaiKualitas.forEach(function (nilai, i) {
+    var itemEl = document.createElement('li');
+    var status = nilai <= 1 ? 'bagus' : (nilai <= 2 ? 'sedang' : 'jelek');
+    itemEl.textContent = NAMA_ELEKTRODA[i] + ': ' + status;
+    itemEl.className = 'kualitas-' + status;
+    kualitasEl.appendChild(itemEl);
+  });
+
+  perbaruiPeringatanKualitas();
+}
+
+// Tampilkan/sembunyikan peringatan, lalu kunci atau buka tombol rekam.
+// Dipisah jadi fungsi sendiri karena dipanggil dari dua tempat: waktu data
+// kualitas baru masuk, dan waktu peneliti mencentang "abaikan".
+function perbaruiPeringatanKualitas() {
+  var bermasalah = adaElektrodaJelek();
+
+  kualitasPeringatanEl.hidden = !bermasalah;
+  recordBtn.disabled = !bolehMulaiRekam();
+}
+
+// Satu tempat untuk semua syarat boleh-tidaknya mulai merekam, supaya
+// syaratnya tidak tersebar dan tidak saling menimpa. Sebelumnya syarat ini
+// ditulis langsung di beberapa tempat dan gampang jadi tidak konsisten.
+function bolehMulaiRekam() {
+  if (sedangMerekam) return false;
+  if (statusKoneksi !== 'connected') return false;
+  if (adaElektrodaJelek() && !abaikanKualitasEl.checked) return false;
+  return true;
+}
+
+abaikanKualitasEl.addEventListener('change', perbaruiPeringatanKualitas);
+
+
 /* ===== Sesi Rekam Data EEG (durasi bebas, distop manual) =====
    Daripada mengambil satu snapshot band power sesaat, kita rekam sampai
    peserta menekan "Stop Rekam", lalu simpan RATA-RATA band power selama
@@ -153,7 +243,7 @@ var sedangMerekam = false;
 var waktuBerjalanDetik = 0;
 var timerRekam = null; // penampung id dari setInterval, supaya bisa dibatalkan
 var jumlahBandPower = {}; // total penjumlahan tiap band selama rekaman
-var jumlahSampel = 0; // berapa kali onBandPower menembak selama rekaman
+var jumlahSampel = 0; // berapa kali data band power masuk selama rekaman
 var jumlahBandPowerInterval = {}; // total penjumlahan tiap band, direset tiap INTERVAL_DETIK detik
 var jumlahSampelInterval = 0; // jumlah sampel di potongan waktu yang sedang berjalan
 var intervalHasil = []; // daftar titik data { detik, delta, theta, alpha, beta, gamma } sepanjang sesi
@@ -167,7 +257,7 @@ function flushIntervalBucket() {
   if (jumlahSampelInterval === 0) return; // tidak ada data masuk di potongan ini, jangan simpan titik kosong
 
   var titik = { detik: waktuBerjalanDetik };
-  MuseSGen2.BANDS.forEach(function (band) {
+  BANDS.forEach(function (band) {
     titik[band.key] = jumlahBandPowerInterval[band.key] / jumlahSampelInterval;
     jumlahBandPowerInterval[band.key] = 0;
   });
@@ -178,7 +268,7 @@ function flushIntervalBucket() {
 // Bersiap merekam: kosongkan akumulator, kunci tombol, mulai hitung waktu
 // berjalan (naik terus sampai peserta menekan "Stop Rekam").
 function mulaiRekam() {
-  MuseSGen2.BANDS.forEach(function (band) {
+  BANDS.forEach(function (band) {
     jumlahBandPower[band.key] = 0;
     jumlahBandPowerInterval[band.key] = 0;
   });
@@ -205,8 +295,8 @@ function mulaiRekam() {
 recordBtn.addEventListener('click', mulaiRekam);
 
 // Peserta menekan "Stop Rekam": hentikan hitung waktu, lalu hitung
-// rata-rata dan simpan (lihat selesaiRekam). Beda dengan muse.onReset di
-// bawah — di sini koneksi headset TIDAK ikut terputus.
+// rata-rata dan simpan (lihat selesaiRekam). Beda dengan aliran data yang
+// terputus — di sini aliran datanya TIDAK ikut berhenti.
 stopRecordBtn.addEventListener('click', selesaiRekam);
 
 // Peserta menekan Stop: hentikan timer, hitung rata-rata, simpan ke
@@ -224,12 +314,12 @@ function selesaiRekam() {
 
   if (jumlahSampel > 0) {
     hasilEeg = {};
-    MuseSGen2.BANDS.forEach(function (band) {
+    BANDS.forEach(function (band) {
       var rataRata = jumlahBandPower[band.key] / jumlahSampel;
       // "raw" (angka mentah, belum dibulatkan) disimpan terpisah dari
       // "value" (teks siap tampil) supaya halaman Hasil Akhir bisa hitung
       // rasio Theta/Beta secara presisi, tanpa harus parsing balik teks.
-      hasilEeg[band.key] = { value: MuseSGen2.formatPower(rataRata), raw: rataRata };
+      hasilEeg[band.key] = { value: formatPower(rataRata), raw: rataRata };
     });
     // Titik-titik data per INTERVAL_DETIK detik sepanjang sesi ini, dipakai
     // halaman Hasil Akhir untuk grafik tren dan untuk cari puncak Alpha.
@@ -240,7 +330,7 @@ function selesaiRekam() {
     simpanHasilKuesioner('eeg1', hasilEeg);
     tahapEeg = 2;
     tampilkanTahapEeg();
-    recordBtn.disabled = false;
+    recordBtn.disabled = !bolehMulaiRekam();
     recordStatusEl.textContent = 'EEG 1 selesai direkam.';
   } else {
     simpanHasilKuesioner('eeg2', hasilEeg);
@@ -249,45 +339,138 @@ function selesaiRekam() {
 }
 
 
-/* ===== Hubungkan tombol Connect/Disconnect ===== */
+/* ===== Menampilkan status koneksi ===== */
 
-connectBtn.addEventListener('click', function () {
-  if (muse.isConnected) {
-    muse.disconnect();
-  } else {
-    muse.connect();
-  }
-});
+var statusKoneksi = 'disconnected';
 
-
-/* ===== Dengarkan event-event dari library MuseSGen2 ===== */
-
-// Status koneksi berubah (menghubungkan / terhubung / terputus / error).
-// Ditulis sebagai fungsi bernama (bukan langsung di dalam muse.onStatusChange)
+// Ditulis sebagai fungsi bernama (bukan langsung di dalam penerima pesan SSE)
 // supaya bisa dipanggil ulang secara manual oleh tombol Demo di bawah.
 function handleStatusChange(text, state) {
+  statusKoneksi = state;
   statusEl.textContent = 'Status: ' + text;
   // Tandai secara visual (bukan cuma lewat teks) kalau statusnya error,
   // supaya kelihatan beda dari status biasa seperti "menghubungkan..."
   statusEl.classList.toggle('status-error', state === 'error');
   connectBtn.disabled = state === 'connecting';
-  connectBtn.textContent = state === 'connected' ? 'Disconnect' : 'Connect ke Muse';
 
-  // Tombol rekam cuma boleh ditekan kalau sudah terhubung, dan tetap
-  // terkunci selama proses rekam sedang berjalan.
-  recordBtn.disabled = state !== 'connected' || sedangMerekam;
+  // Tombol rekam cuma boleh ditekan kalau data sedang mengalir, sinyalnya
+  // layak, dan tidak sedang merekam (lihat bolehMulaiRekam).
+  recordBtn.disabled = !bolehMulaiRekam();
 }
-muse.onStatusChange(handleStatusChange);
 
-// Persentase baterai headset berubah
-muse.onBattery(function (percent) {
-  batteryEl.textContent = 'Battery: ' + Math.round(percent) + '%';
-});
+
+/* ===== Menerima data dari bridge (SSE) =====
+   EventSource itu fitur bawaan browser untuk menerima aliran pesan dari
+   server lewat HTTP biasa. Kelebihannya buat kita: kalau relay-nya di-restart
+   atau WiFi sempat putus, browser menyambung ulang SENDIRI tanpa perlu kode
+   tambahan — cocok untuk sesi lab yang bisa saja tercolok-cabut. */
+
+var sumberData = null;
+
+function hubungkanKeBridge() {
+  if (dibukaLewatFile) {
+    handleStatusChange(
+      'halaman ini dibuka langsung dari file. Jalankan "node bridge/relay.js" lalu buka http://localhost:8080/pages/eegmonitor.html',
+      'error'
+    );
+    return;
+  }
+
+  if (sumberData) sumberData.close(); // tutup koneksi lama sebelum bikin baru
+
+  handleStatusChange('menghubungkan ke bridge...', 'connecting');
+  sumberData = new EventSource('/eeg-stream');
+
+  sumberData.onmessage = function (event) {
+    var pesan = JSON.parse(event.data);
+
+    if (pesan.tipe === 'status') {
+      terimaStatusDariRelay(pesan);
+    } else if (pesan.tipe === 'bandpower') {
+      handleBandPower(pesan.powers);
+      perbaruiKualitas(pesan.kualitas);
+      if (pesan.battery !== null && pesan.battery !== undefined) {
+        batteryEl.textContent = 'Battery: ' + Math.round(pesan.battery) + '%';
+      }
+    } else if (pesan.tipe === 'jaringan') {
+      tampilkanJejakJaringan(pesan);
+    }
+  };
+
+  sumberData.onerror = function () {
+    // Ini berarti browser tidak bisa menghubungi relay-nya sama sekali
+    // (relay belum dijalankan, atau baru saja dimatikan). Browser akan
+    // mencoba menyambung lagi sendiri, jadi di sini cukup memberi tahu.
+    handleStatusChange('bridge tidak bisa dihubungi. Pastikan "node bridge/relay.js" sedang jalan.', 'error');
+  };
+}
+
+// Relay memberi tahu apakah data dari HP sedang mengalir atau tidak.
+// Perhatikan bedanya dengan onerror di atas: yang ini artinya relay-nya
+// hidup dan bisa dihubungi, tapi HP-nya yang belum mengirim apa-apa.
+function terimaStatusDariRelay(pesan) {
+  handleStatusChange(pesan.teks, pesan.state);
+
+  if (pesan.state !== 'connected') {
+    kosongkanTampilan();
+  }
+}
+
+/* Bukti bahwa paket dari HP pernah sampai ke relay.
+
+   Perhatikan: baris ini sengaja TIDAK ikut dihapus kosongkanTampilan(). Dia
+   catatan sejarah ("jam sekian pernah sampai"), bukan status hidup-mati —
+   dan justru di situ gunanya. Tombol Send Test di aplikasi cuma mengirim
+   paket sekali, jadi status "Terhubung" yang biasa cuma menyala sekitar dua
+   detik lalu padam lagi. Tanpa baris yang menetap ini, klien yang kebetulan
+   tidak sedang menatap layar akan menyimpulkan Send Test-nya gagal, padahal
+   jaringannya justru baru saja terbukti jalan. */
+function tampilkanJejakJaringan(pesan) {
+  // Relay mengirim angka epoch; jam-nya dirangkai di sini supaya yang tampil
+  // adalah jam di komputer yang sedang dipakai, bukan jam server (UTC).
+  var jam = new Date(pesan.waktu).toLocaleTimeString('id-ID');
+
+  jejakJaringanEl.textContent =
+    'Paket dari HP (' + pesan.ip + ') pernah sampai jam ' + jam + ' — jaringan OK.';
+  jejakJaringanEl.hidden = false;
+}
+
+// Aliran data berhenti -> kosongkan semua tampilan supaya tidak ada angka
+// basi yang menempel di layar dan disangka masih data terbaru.
+function kosongkanTampilan() {
+  resetBandCards();
+  chart.data.labels = [];
+  chart.data.datasets.forEach(function (ds) { ds.data = []; });
+  chart.update('none');
+  perbaruiKualitas(null);
+  batteryEl.textContent = 'Battery -'; // jangan biarkan persen terakhir menempel seolah masih terbaru
+
+  // Kalau aliran data putus di tengah sesi rekam, batalkan rekamannya supaya
+  // tidak nyangkut di status "Merekam..." selamanya
+  if (sedangMerekam) {
+    clearInterval(timerRekam);
+    sedangMerekam = false;
+    stopRecordBtn.hidden = true;
+    recordStatusEl.textContent = 'Rekaman dibatalkan karena aliran data terputus.';
+  }
+}
+
+// Tombol ini sebenarnya jarang dibutuhkan, karena EventSource menyambung
+// ulang sendiri. Disediakan untuk keadaan yang benar-benar mentok — misalnya
+// relay-nya baru saja dijalankan setelah halaman ini terlanjur dibuka.
+connectBtn.addEventListener('click', hubungkanKeBridge);
+
+// Langsung sambung begitu halaman dibuka. Tidak ada yang perlu diklik
+// peserta: kalau relay dan HP-nya sudah siap, datanya langsung muncul.
+hubungkanKeBridge();
+
+
+/* ===== Mengolah data band power yang masuk ===== */
 
 // Update angka di tiap kartu band (Delta/Theta/dst) sesuai data band power
 // yang baru masuk.
 function perbaruiKartuBand(powers) {
-  MuseSGen2.BANDS.forEach(function (band) {
+  BANDS.forEach(function (band) {
     updateBandCard(band, powers[band.key]);
   });
 }
@@ -296,7 +479,7 @@ function perbaruiKartuBand(powers) {
 // paling lama kalau sudah kepenuhan (supaya grafik selalu menampilkan
 // MAX_POINTS data paling baru saja, tidak melebar terus-menerus)
 function tambahTitikGrafik(powers) {
-  MuseSGen2.BANDS.forEach(function (band, i) {
+  BANDS.forEach(function (band, i) {
     var data = chart.data.datasets[i].data;
     data.push(powers[band.key]);
     if (data.length > MAX_POINTS) {
@@ -312,7 +495,7 @@ function tambahTitikGrafik(powers) {
 function tambahSampelJikaSedangRekam(powers) {
   if (!sedangMerekam) return;
 
-  MuseSGen2.BANDS.forEach(function (band) {
+  BANDS.forEach(function (band) {
     jumlahBandPower[band.key] += powers[band.key];
     jumlahBandPowerInterval[band.key] += powers[band.key];
   });
@@ -320,7 +503,7 @@ function tambahSampelJikaSedangRekam(powers) {
   jumlahSampelInterval++;
 }
 
-// Data band power baru datang (dikirim library beberapa kali per detik).
+// Data band power baru datang (dikirim relay ~10 kali per detik).
 // Sama seperti handleStatusChange, dipisah jadi fungsi bernama supaya bisa
 // "disuapi" data palsu oleh tombol Demo, seolah-olah data itu datang dari
 // headset asli.
@@ -333,24 +516,7 @@ function handleBandPower(powers) {
   tambahTitikGrafik(powers);
   tambahSampelJikaSedangRekam(powers);
 }
-muse.onBandPower(handleBandPower);
 
-// Headset baru saja terputus -> kosongkan semua tampilan
-muse.onReset(function () {
-  resetBandCards();
-  chart.data.labels = [];
-  chart.data.datasets.forEach(function (ds) { ds.data = []; });
-  chart.update('none');
-
-  // Kalau koneksi putus di tengah sesi rekam, batalkan rekamannya supaya
-  // tidak nyangkut di status "Merekam..." selamanya
-  if (sedangMerekam) {
-    clearInterval(timerRekam);
-    sedangMerekam = false;
-    stopRecordBtn.hidden = true;
-    recordStatusEl.textContent = '';
-  }
-});
 
 /* ===== Peringatan kalau halaman ditutup/ditinggalkan saat sedang merekam =====
    Tanpa ini, peserta bisa tidak sengaja pindah/menutup tab di tengah sesi
@@ -368,13 +534,19 @@ window.addEventListener('beforeunload', function (event) {
 /* ===== Tombol Demo (khusus development, tanpa headset asli) =====
    Kalau belum ada headset fisik di tangan, tombol ini bikin halaman
    "berpura-pura" terhubung dan mengirim band power acak, supaya sisa alur
-   (kartu, grafik, rekam data, sampai ke hasilakhir.html) tetap bisa dites. */
+   (kartu, grafik, rekam data, sampai ke hasilakhir.html) tetap bisa dites.
+
+   Bedanya dengan bridge/simulate-osc.js: simulator itu meniru HP-nya, jadi
+   ikut menguji relay dan parsing OSC-nya juga. Tombol Demo ini lebih dangkal
+   — dia melewati relay sama sekali, cuma menguji tampilan halaman ini.
+   Keduanya berguna: Demo buat cek cepat tampilan, simulator buat cek rantai
+   datanya benar-benar nyambung. */
 
 // Buat angka band power acak, cuma buat simulasi waktu belum ada headset
 // fisik. Range-nya sekadar mendekati skala data asli, BUKAN data EEG asli.
 function buatDataDummy() {
   var powers = {};
-  MuseSGen2.BANDS.forEach(function (band) {
+  BANDS.forEach(function (band) {
     powers[band.key] = Math.random() * 2 + 0.1;
   });
   return powers;
@@ -382,10 +554,13 @@ function buatDataDummy() {
 
 demoBtn.addEventListener('click', function () {
   demoBtn.disabled = true;
-  connectBtn.disabled = true; // cegah nyoba connect asli bareng demo jalan
+  connectBtn.disabled = true; // cegah nyoba sambung ke bridge bareng demo jalan
+
+  if (sumberData) sumberData.close(); // hentikan data asli supaya tidak campur
 
   handleStatusChange('Terhubung (data dummy, khusus development)', 'connected');
   batteryEl.textContent = 'Battery: 85% (dummy)';
+  perbaruiKualitas([1, 1, 1, 1]); // pura-pura semua elektroda menempel bagus
 
   // ~2x per detik, mirip kecepatan data asli dari headset. Tidak perlu
   // tombol "stop" — interval ini otomatis berhenti begitu halaman

@@ -163,6 +163,72 @@ form label:hover {
 .card.band-beta { border-left-color: #f59e0b}
 .card.band-gamma { border-left-color: #ef4444}
 
+/* Tombol yang sedang dikunci (misalnya "Mulai Rekam" waktu data belum
+   mengalir atau elektroda masih jelek). Tanpa ini tombol terkunci kelihatan
+   sama persis dengan tombol biasa, jadi orang mengira aplikasinya rusak
+   waktu diklik tapi tidak terjadi apa-apa. */
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* Status koneksi yang bermasalah (lihat handleStatusChange di eeg.js).
+   Kelasnya sudah lama dipasang lewat JS tapi belum pernah diberi tampilan,
+   jadi pesan error tampil sama saja dengan status biasa. Sekarang dibedakan,
+   karena "relay belum dijalankan" adalah kesalahan yang paling sering
+   terjadi dan paling mudah diperbaiki begitu terlihat. */
+.status-error {
+    color: #7f1d1d;
+    background: #fee2e2;
+    border-left: 6px solid #ef4444;
+    padding: 8px 12px;
+    border-radius: 8px;
+}
+
+/* Kualitas sinyal tiap elektroda (lihat bagian "Kualitas Sinyal" di
+   eegmonitor.html). Warnanya sengaja dibikin lampu lalu lintas — hijau /
+   kuning / merah — supaya peneliti bisa menilai sekilas tanpa membaca
+   tulisannya dulu. Tulisannya tetap ada ("bagus"/"sedang"/"jelek") supaya
+   tidak bergantung pada warna saja, karena tidak semua orang membedakan
+   merah dan hijau dengan mudah. */
+.kualitas-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    list-style: none;
+    padding-left: 0;
+    margin: 8px 0;
+}
+
+.kualitas-list li {
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: #f5f5f5;
+    border-left: 6px solid #ccc;
+}
+
+/* Selector-nya sengaja ".kualitas-list li.kualitas-bagus", bukan cuma
+   ".kualitas-bagus" saja. Kalau cuma ".kualitas-bagus", specificity-nya
+   (1 class) kalah dibanding ".kualitas-list li" di atas (1 class + 1
+   elemen), jadi border-left-color abu-abu dari situ selalu menang dan
+   warnanya tidak pernah kelihatan berubah — padahal className-nya sudah
+   benar dipasang lewat JS. Menambahkan "li" di depan membuat specificity-nya
+   pasti lebih tinggi, jadi tidak lagi kalah gara-gara urutan di file ini. */
+.kualitas-list li.kualitas-bagus { border-left-color: #10b981; }
+.kualitas-list li.kualitas-sedang { border-left-color: #f59e0b; }
+.kualitas-list li.kualitas-jelek { border-left-color: #ef4444; }
+
+.peringatan {
+    font-size: 14px;
+    color: #7f1d1d;
+    background: #fee2e2;
+    border-left: 6px solid #ef4444;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin: 8px 0;
+}
+
 figure {
     margin-left: 0;
 }
