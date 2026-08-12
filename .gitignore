@@ -1,2 +1,37 @@
 CLAUDE.md
 muse_official_sdk/
+
+# Aplikasi Android (SDK resmi Muse) — JANGAN di-push ke GitHub dulu.
+#
+# Perjanjian lisensi SDK Muse (LICENSE.html di dalam paket SDK) melarang
+# menerbitkan SDK-nya, kecuali dalam bentuk sudah dikompilasi jadi satu dengan
+# aplikasi:
+#
+#   "You may not, directly or indirectly, publish, post or otherwise make
+#    available the SDK other than as compiled with, incorporated into, or
+#    packaged with, Your Application"
+#
+# Isi folder android/ mengandung dua hal yang kena aturan itu:
+#   1. libmuse_android.jar dan libmuse_android.so — ini SDK-nya sendiri
+#   2. MainActivity.java & OscSender.java — ini "Sample Code", dan perjanjian
+#      itu menggolongkan Sample Code sebagai Confidential Information
+#
+# File APK hasil build boleh dibagikan (itu "compiled with Your Application").
+# Yang tidak boleh adalah menaruh jar/.so/Sample Code mentahnya di repo publik.
+#
+# Folder ini diabaikan seluruhnya dulu supaya tidak ada yang ter-push tanpa
+# sengaja. Kalau nanti Interaxon sudah memberi izin tertulis, aturan ini bisa
+# dipersempit — cukup abaikan file SDK-nya saja dan kode buatan sendiri tetap
+# bisa dilacak git.
+android/
+
+# Perkakas bantu di komputer masing-masing (bukan bagian aplikasi Serenity).
+#
+# .opencode/    : konfigurasi + node_modules asisten coding OpenCode. Isinya
+#                 ribuan file dependency yang tidak ada hubungannya dengan
+#                 aplikasi, dan tiap orang bisa pakai asisten yang berbeda.
+# graphify-out/ : hasil pemetaan knowledge graph (graph.json, laporan, HTML).
+#                 File turunan yang bisa dibuat ulang kapan saja dari kode,
+#                 jadi tidak perlu ikut dilacak git.
+.opencode/
+graphify-out/
