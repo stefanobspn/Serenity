@@ -1,0 +1,50 @@
+# serenity-relay.service — menjalankan bridge/relay.js sebagai layanan systemd
+# =============================================================================
+# Dipakai kalau relay dijalankan di server (misalnya droplet DigitalOcean),
+# bukan di laptop. Gunanya supaya relay:
+#   - hidup lagi sendiri kalau sempat mati
+#   - otomatis jalan lagi setiap server di-restart
+#   - lognya masuk ke journalctl, bukan hilang begitu terminal ditutup
+#
+# CARA PASANG (lihat docs/DeploymentDroplet.md untuk langkah lengkapnya):
+#   sudo cp bridge/serenity-relay.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now serenity-relay
+#
+# LIHAT LOG (di sinilah daftar "sinyal masuk" muncul):
+#   sudo journalctl -u serenity-relay -f
+
+[Unit]
+Description=Serenity EEG relay (OSC ke SSE)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# Sesuaikan kalau repo-nya ditaruh di tempat lain.
+WorkingDirectory=/opt/serenity
+ExecStart=/usr/bin/node /opt/serenity/bridge/relay.js --port-web=80 --port-udp=7000
+
+# Jalan sebagai user biasa, bukan root. Port 80 di bawah 1024 dan biasanya
+# cuma boleh dipakai root — AmbientCapabilities di bawah memberi izin khusus
+# untuk port itu saja, tanpa memberi hak root penuh ke seluruh proses.
+User=serenity
+Group=serenity
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+Restart=always
+RestartSec=3
+
+# Pengetatan seperlunya. Relay ini cuma perlu membaca file situs dan membuka
+# soket; dia tidak perlu menulis apa pun ke disk.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
