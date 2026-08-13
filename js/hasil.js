@@ -292,6 +292,32 @@ function siapkanDataCsv() {
     var dataEeg = hasil[sesi];
     if (!dataEeg) return;
 
+    /* Catatan mutu sinyal sesi ini (dibuat di selesaiRekam() pada js/eeg.js):
+       nilai kontak elektroda TERBURUK selama sesi, 1 = bagus, 2 = sedang,
+       4 = jelek/lepas. Nilainya sama untuk semua baris sesi ini, jadi disusun
+       sekali di luar loop seperti kolomPeserta.
+
+       Rekaman yang dibuat sebelum kolom ini ada tidak punya dataEeg.kualitas,
+       jadi diisi '' — sama seperti perlakuan untuk kuesioner yang belum diisi
+       di atas, supaya file CSV-nya tetap valid dan bukan malah error. */
+    var mutu = dataEeg.kualitas;
+    var kosong = ['', '', '', ''];
+    var nilaiTerburuk = (mutu && mutu.terburuk) ? mutu.terburuk : kosong;
+    var persenJelek = (mutu && mutu.persenJelek) ? mutu.persenJelek : kosong;
+
+    // Urutan elektroda: TP9 (kiri belakang), AF7 (kiri depan),
+    // AF8 (kanan depan), TP10 (kanan belakang) — sama dengan NAMA_ELEKTRODA
+    // di js/eeg.js, karena angkanya memang datang dari larik yang sama.
+    var kolomMutu = nilaiTerburuk.slice(0, 4).concat(
+      persenJelek.slice(0, 4).map(function (persen) {
+        // null = tidak ada data kualitas sama sekali selama sesi itu; dibedakan
+        // dari angka 0 yang artinya "ada datanya, dan tidak pernah jelek".
+        return (persen === '' || persen === null) ? '' : persen.toFixed(1);
+      })
+    ).concat([
+      mutu ? (mutu.diabaikan ? 'ya' : 'tidak') : ''
+    ]);
+
     dataEeg.interval.forEach(function (titik) {
       // concat() bikin larik BARU tiap baris — kolomPeserta-nya sendiri tidak
       // ikut berubah, jadi aman dipakai berulang untuk baris berikutnya.
@@ -303,7 +329,7 @@ function siapkanDataCsv() {
         titik.alpha.toFixed(3),
         titik.beta.toFixed(3),
         titik.gamma.toFixed(3)
-      ]));
+      ]).concat(kolomMutu));
     });
   });
 
@@ -321,7 +347,21 @@ function buatTeksCsv() {
     'sees10_rata_rata', 'sees10_status',
     'hunger_skor',
     'sesi', 'detik',
-    'delta', 'theta', 'alpha', 'beta', 'gamma'
+    'delta', 'theta', 'alpha', 'beta', 'gamma',
+    /* Mutu kontak elektroda selama sesi, dua ukuran yang saling melengkapi:
+       - kualitas_terburuk_* : nilai terburuk yang pernah muncul.
+         1 = bagus, 2 = sedang, 4 = jelek/lepas.
+       - persen_jelek_*      : berapa persen waktu elektroda itu berstatus
+         jelek. Ini yang sebenarnya menentukan data layak pakai atau tidak —
+         terburuk 4 dengan persen 0,3 cuma kedipan sesaat, sedangkan terburuk 4
+         dengan persen 40 berarti sesi itu sebaiknya diulang.
+       Kolom terakhir menandai apakah peneliti merekam sambil menembus kunci
+       kualitas ("ya"/"tidak"). */
+    'kualitas_terburuk_tp9', 'kualitas_terburuk_af7',
+    'kualitas_terburuk_af8', 'kualitas_terburuk_tp10',
+    'persen_jelek_tp9', 'persen_jelek_af7',
+    'persen_jelek_af8', 'persen_jelek_tp10',
+    'kualitas_diabaikan'
   ];
   var semuaBaris = [header].concat(siapkanDataCsv());
 

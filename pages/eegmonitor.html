@@ -98,6 +98,15 @@
                 atas, baru tekan tombol ini. Tekan "Stop Rekam" kapan saja untuk
                 menyelesaikan sesi ini.</p>
 
+            <label class="catatan">
+                <input type="checkbox" id="lewatiAwal" checked>
+                Buang 30 detik pertama (masa tenang)
+            </label>
+            <p class="catatan">Detik-detik awal tiap rekaman biasanya belum stabil — peserta
+                masih membetulkan posisi duduk, dan elektroda baru menyesuaikan diri.
+                Dengan pilihan ini dinyalakan, aplikasi menunggu dulu 30 detik sebelum
+                benar-benar mulai mengumpulkan data.</p>
+
             <button id="recordBtn" class="btn-rekam">Mulai Rekam</button>
             <button id="stopRecordBtn" class="btn-rekam" hidden>Stop Rekam</button>
             <p id="recordStatus"></p>

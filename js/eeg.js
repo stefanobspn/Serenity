@@ -45,6 +45,20 @@
 var MAX_POINTS = 60; // jumlah titik riwayat yang ditampilkan di grafik
 var INTERVAL_DETIK = 10; // tiap berapa detik satu titik data interval disimpan (lihat "Sesi Rekam" di bawah)
 
+/* Berapa detik pertama yang dibuang sebelum perekaman benar-benar dimulai.
+
+   Angkanya bukan tebakan. Di rekaman asli pertama, baseline yang seharusnya
+   datar justru meluncur turun sepanjang sesi: rasio Theta/Beta rata-rata
+   4,243 di 50 detik pertama, lalu 1,844 di 50 detik terakhir. Bandingkan
+   dengan sesi aktivitasnya yang cuma 1,435 — artinya sebagian besar dari
+   "penurunan" yang tampak antara kedua sesi itu sebenarnya baseline yang
+   belum tenang, bukan efek dari perlakuan yang sedang diteliti.
+
+   Membuang detik-detik awal ini kelihatan seperti membuang data, padahal
+   justru sebaliknya: yang dibuang adalah bagian yang mencemari perbandingan
+   antara Tahap Satu dan Tahap Dua nanti. */
+var DETIK_TENANG = 30;
+
 // Nama elektroda sesuai posisinya di headset, urutannya sama dengan urutan
 // angka yang dikirim SDK resmi lewat /elements/horseshoe.
 var NAMA_ELEKTRODA = ['TP9 (kiri belakang)', 'AF7 (kiri depan)', 'AF8 (kanan depan)', 'TP10 (kanan belakang)'];
@@ -64,6 +78,7 @@ var rekamInstruksiEl = document.getElementById('rekamInstruksi');
 var kualitasEl = document.getElementById('kualitas');
 var kualitasPeringatanEl = document.getElementById('kualitasPeringatan');
 var abaikanKualitasEl = document.getElementById('abaikanKualitas');
+var lewatiAwalEl = document.getElementById('lewatiAwal');
 
 
 /* ===== Tahap rekam: EEG 1 (baseline) lalu EEG 2 (setelah aktivitas) =====
@@ -172,13 +187,67 @@ var chart = new Chart(document.getElementById('eegChart').getContext('2d'), {
 
 var kualitasSekarang = null; // array 4 angka, atau null kalau belum ada data
 
+/* Yang dikunci cuma nilai DI ATAS 2, yaitu elektroda yang benar-benar
+   jelek/lepas — nilai 2 ("sedang") tetap boleh direkam.
+
+   Kenapa bukan menuntut semua elektroda bernilai 1: di lapangan itu nyaris
+   mustahil, terutama TP9/TP10 yang tertutup rambut. Kalau ambangnya dibuat
+   ketat, yang terjadi bukan data jadi lebih bersih, tapi peneliti menghabiskan
+   berpuluh menit membetulkan headband sebelum tiap peserta. Untuk penelitian
+   stres, itu justru merusak: pesertanya keburu gelisah dan berkeringat, jadi
+   baseline yang terekam bukan lagi kondisi netralnya. Data HSI 2 masih layak
+   pakai; yang benar-benar merusak band power adalah elektroda yang lepas. */
 function adaElektrodaJelek() {
   if (!kualitasSekarang) return false;
-  return kualitasSekarang.some(function (nilai) { return nilai > 1; });
+  return kualitasSekarang.some(function (nilai) { return nilai > 2; });
+}
+
+/* Selama sesi rekam berlangsung, catat nilai TERBURUK yang pernah muncul di
+   tiap elektroda, supaya ikut tersimpan bersama hasilnya (lihat selesaiRekam).
+
+   Kenapa nilai terburuk, bukan rata-rata atau nilai terakhir: yang penting
+   buat menilai mutu data adalah "seburuk apa dia pernah jadi". Satu elektroda
+   yang sempat lepas di tengah rekaman sudah terlanjur mencemari rata-rata band
+   power sesi itu, walaupun di akhir sesi kelihatan bagus lagi. Rata-rata akan
+   menyamarkan kejadian itu, nilai terakhir tidak akan melihatnya sama sekali.
+
+   Tapi nilai terburuk saja TIDAK CUKUP. Kontak elektroda sering berkedip
+   lepas sepersekian detik tanpa kelihatan di layar, jadi kalau cuma nilai
+   terburuk yang dicatat, hampir semua sesi akan tercatat "pernah jelek" dan
+   kolomnya jadi tidak bisa membedakan apa pun. Makanya dihitung juga berapa
+   BANYAK data kualitas yang berstatus jelek dibanding seluruhnya: kedipan
+   sekejap dan elektroda yang lepas separuh sesi akan kelihatan jauh berbeda. */
+var kualitasTerburuk = null; // array 4 angka selama merekam, atau null
+var jumlahCekKualitas = 0; // berapa kali data kualitas masuk selama sesi rekam
+var jumlahJelekPerElektroda = [0, 0, 0, 0]; // berapa kali tiap elektroda berstatus jelek
+
+function catatKualitasTerburuk(nilaiKualitas) {
+  if (!sedangMerekam || !nilaiKualitas) return;
+
+  jumlahCekKualitas++;
+  nilaiKualitas.forEach(function (nilai, i) {
+    // Ambang yang sama dengan adaElektrodaJelek(): di atas 2 = jelek/lepas.
+    if (nilai > 2) jumlahJelekPerElektroda[i]++;
+  });
+
+  if (!kualitasTerburuk) {
+    // slice() bikin SALINAN lariknya. Kalau lariknya dipakai langsung, isinya
+    // ikut berubah tiap kali data kualitas baru datang, dan "terburuk"-nya
+    // jadi tidak ada artinya.
+    kualitasTerburuk = nilaiKualitas.slice();
+    return;
+  }
+
+  nilaiKualitas.forEach(function (nilai, i) {
+    if (nilai > kualitasTerburuk[i]) {
+      kualitasTerburuk[i] = nilai; // angka lebih besar = kontak lebih buruk
+    }
+  });
 }
 
 function perbaruiKualitas(nilaiKualitas) {
   kualitasSekarang = nilaiKualitas;
+  catatKualitasTerburuk(nilaiKualitas);
 
   if (!nilaiKualitas) {
     kualitasEl.textContent = 'Kualitas sinyal: belum ada data';
@@ -247,6 +316,7 @@ var jumlahSampel = 0; // berapa kali data band power masuk selama rekaman
 var jumlahBandPowerInterval = {}; // total penjumlahan tiap band, direset tiap INTERVAL_DETIK detik
 var jumlahSampelInterval = 0; // jumlah sampel di potongan waktu yang sedang berjalan
 var intervalHasil = []; // daftar titik data { detik, delta, theta, alpha, beta, gamma } sepanjang sesi
+var sisaMasaTenang = 0; // sisa detik masa tenang; selama masih > 0, sampel yang masuk dibuang
 
 // Hitung rata-rata potongan waktu yang sedang berjalan, simpan sebagai satu
 // titik data di intervalHasil, lalu kosongkan akumulatornya supaya siap
@@ -275,22 +345,51 @@ function mulaiRekam() {
   jumlahSampel = 0;
   jumlahSampelInterval = 0;
   intervalHasil = [];
+  // Catatan mutu sinyal dimulai dari nol tiap sesi.
+  kualitasTerburuk = null;
+  jumlahCekKualitas = 0;
+  jumlahJelekPerElektroda = [0, 0, 0, 0];
 
   sedangMerekam = true;
   recordBtn.disabled = true;
   stopRecordBtn.hidden = false; // munculkan tombol stop selama rekam berlangsung
 
   waktuBerjalanDetik = 0;
-  recordStatusEl.textContent = 'Merekam... ' + waktuBerjalanDetik + ' detik berjalan';
+  sisaMasaTenang = lewatiAwalEl.checked ? DETIK_TENANG : 0;
+  perbaruiStatusRekam();
 
   timerRekam = setInterval(function () {
+    /* Selama masa tenang, waktuBerjalanDetik sengaja TIDAK ikut naik. Jadi
+       "detik ke-10" di file hasil selalu berarti sepuluh detik setelah
+       pengumpulan data betul-betul dimulai, bukan sepuluh detik setelah
+       tombolnya ditekan. Tanpa ini, rekaman dengan masa tenang dan rekaman
+       tanpa masa tenang punya arti sumbu waktu yang berbeda, dan grafik
+       trennya jadi tidak bisa dibandingkan satu sama lain. */
+    if (sisaMasaTenang > 0) {
+      sisaMasaTenang--;
+      perbaruiStatusRekam();
+      return;
+    }
+
     waktuBerjalanDetik++;
-    recordStatusEl.textContent = 'Merekam... ' + waktuBerjalanDetik + ' detik berjalan';
+    perbaruiStatusRekam();
 
     if (waktuBerjalanDetik % INTERVAL_DETIK === 0) {
       flushIntervalBucket();
     }
   }, 1000);
+}
+
+// Satu tempat untuk tulisan status di bawah tombol rekam, supaya kalimat
+// masa tenang dan kalimat sedang-merekam tidak ditulis ulang di banyak tempat
+// lalu lama-lama jadi tidak konsisten.
+function perbaruiStatusRekam() {
+  if (sisaMasaTenang > 0) {
+    recordStatusEl.textContent = 'Masa tenang... ' + sisaMasaTenang +
+      ' detik lagi sebelum perekaman dimulai. Duduk santai dulu.';
+    return;
+  }
+  recordStatusEl.textContent = 'Merekam... ' + waktuBerjalanDetik + ' detik berjalan';
 }
 recordBtn.addEventListener('click', mulaiRekam);
 
@@ -308,7 +407,40 @@ function selesaiRekam() {
   sedangMerekam = false;
   stopRecordBtn.hidden = true;
 
-  flushIntervalBucket(); // simpan sisa potongan waktu terakhir walau belum genap INTERVAL_DETIK detik
+  /* Distop sebelum masa tenang habis. Belum ada satu sampel pun yang
+     terkumpul, jadi ini diperlakukan sebagai BATAL, bukan sebagai sesi kosong.
+
+     Bedanya penting: kalau diteruskan, jumlahSampel masih 0 sehingga hasilEeg
+     bernilai null, dan null itu akan disimpan menimpa hasil sesi ini — untuk
+     EEG 2 artinya peserta langsung dilempar ke halaman Hasil Akhir dengan
+     data yang hilang. Salah pencet selama menunggu tidak boleh sampai
+     menghapus rekaman. */
+  if (sisaMasaTenang > 0) {
+    sisaMasaTenang = 0;
+    recordStatusEl.textContent = 'Perekaman dibatalkan — masa tenang belum selesai, belum ada data yang terkumpul.';
+    recordBtn.disabled = !bolehMulaiRekam();
+    return;
+  }
+
+  /* Sisa potongan waktu terakhir yang belum genap INTERVAL_DETIK detik.
+
+     Dulu potongan sisa ini SELALU disimpan, dan itu bikin masalah nyata di
+     data rekaman pertama: sesi yang distop di detik 100 sekian menghasilkan
+     dua baris berlabel "detik 100" — satu dari potongan 90-100 yang utuh,
+     satu lagi dari sisa nol koma sekian detik sesudahnya. Baris sisa itu
+     cuma berisi segelintir sampel, jadi angkanya jauh lebih goyah daripada
+     tetangganya, dan sendirian dia menarik rata-rata baseline dari 3,105 ke
+     2,934. Di Excel dua baris itu terlihat seperti dua pengukuran pada detik
+     yang sama, tanpa ada yang menandakan bahwa yang satu jauh lebih pendek.
+
+     Jadi potongan sisa cuma disimpan kalau panjangnya minimal setengah
+     interval. Kecualinya: kalau sampai selesai belum ada satu titik pun
+     tersimpan (rekaman yang sangat pendek), potongan sisa tetap disimpan —
+     satu titik yang pendek masih lebih berguna daripada grafik kosong. */
+  var detikSisa = waktuBerjalanDetik % INTERVAL_DETIK;
+  if (detikSisa >= INTERVAL_DETIK / 2 || intervalHasil.length === 0) {
+    flushIntervalBucket();
+  }
 
   var hasilEeg = null;
 
@@ -324,6 +456,24 @@ function selesaiRekam() {
     // Titik-titik data per INTERVAL_DETIK detik sepanjang sesi ini, dipakai
     // halaman Hasil Akhir untuk grafik tren dan untuk cari puncak Alpha.
     hasilEeg.interval = intervalHasil;
+
+    /* Catatan mutu data: seburuk apa kontak elektroda pernah jadi selama sesi
+       ini, dan apakah peneliti sengaja menembus kunci kualitas lewat centang
+       "abaikan". Ini ikut disimpan supaya angka band power di atas tidak
+       pernah berdiri sendiri tanpa konteks — tanpa catatan ini, data yang
+       diambil dengan satu elektroda lepas kelihatan persis sama sahihnya
+       dengan data yang diambil dalam kondisi sempurna, dan tidak akan ada
+       yang bisa membedakannya waktu hasilnya dianalisis nanti. */
+    hasilEeg.kualitas = {
+      terburuk: kualitasTerburuk,
+      persenJelek: jumlahJelekPerElektroda.map(function (jumlah) {
+        // Kalau tidak ada satu pun data kualitas yang masuk, jangan bagi
+        // dengan nol — hasilnya NaN dan bikin file CSV-nya kotor.
+        if (jumlahCekKualitas === 0) return null;
+        return (jumlah / jumlahCekKualitas) * 100;
+      }),
+      diabaikan: abaikanKualitasEl.checked
+    };
   }
 
   if (tahapEeg === 1) {
@@ -494,6 +644,10 @@ function tambahTitikGrafik(powers) {
 // supaya nanti bisa dirata-ratakan di selesaiRekam()
 function tambahSampelJikaSedangRekam(powers) {
   if (!sedangMerekam) return;
+  // Masa tenang belum habis: data yang masuk tetap tampil di layar dan di
+  // grafik (supaya peneliti bisa memantau kualitas sinyal sambil menunggu),
+  // tapi sengaja tidak ikut dijumlahkan ke hasil.
+  if (sisaMasaTenang > 0) return;
 
   BANDS.forEach(function (band) {
     jumlahBandPower[band.key] += powers[band.key];

@@ -207,6 +207,26 @@ function rataRataKanal(nilaiBel) {
   for (var i = 0; i < nilaiBel.length; i++) {
     var bel = nilaiBel[i];
     if (typeof bel !== 'number' || !isFinite(bel)) continue; // lewati NaN
+
+    /* Nol PERSIS bukan pengukuran, melainkan penanda "kanal ini tidak punya
+       data" dari libmuse. Ini kelihatan waktu headset diangkat dari kepala:
+       keempat kanal langsung mengirim 0.00000000 sampai delapan angka di
+       belakang koma, ratusan paket berturut-turut, berbarengan dengan
+       horseshoe yang jadi 4 di semua elektroda. Nilai EEG sungguhan tidak
+       pernah sedatar itu.
+
+       Kenapa nol berbahaya justru DI SINI: konversi ke linear membuat
+       10^0 = 1, angka yang kelihatan sangat masuk akal. Sebelum baris ini
+       ada, headset yang tergeletak di meja membuat kelima band menampilkan
+       1.00 dengan penuh percaya diri, tombol rekam tetap terbuka, dan
+       rekamannya menghasilkan rasio Theta/Beta tepat 1,000 sepanjang sesi —
+       di file CSV hasilnya tidak bisa dibedakan dari data yang sah.
+
+       Melewatinya membuat kanal mati tidak ikut menarik rata-rata, dan kalau
+       keempatnya mati fungsi ini mengembalikan null sehingga kegagalannya
+       kelihatan di layar (lihat periksaKontakHilang). */
+    if (bel === 0) continue;
+
     jumlah += Math.pow(10, bel); // log -> linear
     banyak++;
   }
@@ -230,6 +250,7 @@ var kualitasTerbaru = null;  // nilai horseshoe/HSI per elektroda
 var batteryTerbaru = null;   // persen baterai headset
 var waktuPaketTerakhir = 0;  // buat mendeteksi aliran data yang putus
 var waktuPaketPertama = 0;   // buat memberi tenggang sebelum memperingatkan (lihat periksaBandPowerHilang)
+var waktuKontakTerakhir = 0; // kapan terakhir ada kanal yang datanya sah (lihat periksaKontakHilang)
 
 /* Akhiran alamat OSC -> nama band di Serenity.
 
@@ -298,15 +319,31 @@ function terimaPesan(pesan) {
   if (namaBand) {
     catatAlamatBaru(alamat, true);
     var linear = rataRataKanal(pesan.nilai);
-    if (linear !== null) powerTerbaru[namaBand] = linear;
+
+    /* null (semua kanal mati) sengaja ikut disimpan, tidak disaring seperti
+       dulu. Menyimpan nilai lama waktu kanalnya mati justru bikin layar
+       membeku di angka terakhir yang sehat — kelihatan hidup padahal sudah
+       tidak ada data. Dengan null, kirimPowerTerbaru() berhenti menyiarkan
+       (dia menuntut kelima band terisi), jadi tidak ada satu pun angka palsu
+       yang sampai ke grafik atau ikut terekam. */
+    powerTerbaru[namaBand] = linear;
+    if (linear !== null) waktuKontakTerakhir = Date.now();
 
     /* Band power akhirnya datang setelah sempat diperingatkan — misalnya
        pengaturan di aplikasi Muse baru dibetulkan sambil halamannya dibiarkan
        terbuka. Peringatannya harus dicabut: statusTerakhir dinolkan supaya
        kirimStatusJikaBerubah() menyiarkan "connected" lagi. Tanpa ini, status
        merahnya menempel selamanya dan tombol rekam tetap terkunci padahal
-       datanya sudah sehat. */
-    if (sudahMemperingatkan) {
+       datanya sudah sehat.
+
+       Syarat "linear !== null" itu penting, dan bukan kehati-hatian kosong.
+       Yang mencabut peringatan harus ANGKA yang sah, bukan sekadar pesannya
+       yang datang. Waktu headset lepas dari kepala, pesan band power tetap
+       mengalir sepuluh kali per detik — cuma isinya nol semua. Tanpa syarat
+       ini, tiap pesan kosong itu mencabut peringatan, lalu pemeriksa berkala
+       memasangnya lagi 100ms kemudian, dan status di layar berkedip antara
+       merah dan hijau belasan kali per detik. */
+    if (sudahMemperingatkan && linear !== null) {
       sudahMemperingatkan = false;
       statusTerakhir = null;
       console.log('[relay] band power akhirnya masuk — peringatan dicabut');
@@ -383,6 +420,10 @@ function kirimStatusJikaBerubah() {
   if (status === 'disconnected') {
     sudahMemperingatkan = false;
     waktuPaketPertama = 0;
+    // Sama alasannya: latch kontak juga harus dinolkan, supaya sesi berikutnya
+    // dinilai dari nol dan tidak mewarisi vonis "kontak hilang" dari sesi tadi.
+    waktuKontakTerakhir = 0;
+    sedangKontakHilang = false;
 
     /* Potret band power terakhir ikut dibuang, dan ini bukan sekadar
        kerapian. Relay di server hidup terus lintas peserta, sementara
@@ -429,7 +470,54 @@ setInterval(function () {
   kirimStatusJikaBerubah();
   kirimPowerTerbaru();
   periksaBandPowerHilang();
+  periksaKontakHilang();
 }, JEDA_KIRIM_MS);
+
+
+/* Elektroda lepas dari kepala, padahal paketnya tetap mengalir.
+
+   Ini kembarannya periksaBandPowerHilang() di bawah, untuk kegagalan yang
+   berbeda: di sana band power-nya memang tidak pernah dikirim, di sini
+   dikirim tapi isinya nol semua karena tidak ada kulit kepala yang disentuh.
+   Dua-duanya sama menyesatkannya kalau didiamkan — paket masuk, status
+   telanjur "Terhubung", dan tidak ada satu pun petunjuk bahwa yang terekam
+   sebenarnya bukan otak siapa-siapa.
+
+   Kenapa horseshoe tidak dipakai sebagai penanda: waktu diuji dengan headset
+   sungguhan, horseshoe pernah melaporkan keempat elektroda "sedang" (nilai 2)
+   padahal band power-nya sudah nol semua. Jadi mutu kontak yang dilaporkan
+   headset TIDAK cukup untuk menyimpulkan datanya sah — yang menentukan adalah
+   ada tidaknya angka yang benar-benar sah di band power itu sendiri. */
+var BATAS_KONTAK_MS = 2000;
+var sedangKontakHilang = false;
+
+function periksaKontakHilang() {
+  // Aliran datanya sendiri yang putus? Itu bagian kirimStatusJikaBerubah().
+  if (statusTerakhir !== 'connected') return;
+  if (waktuKontakTerakhir === 0) return; // belum pernah ada band power sah sama sekali
+
+  var hilang = (Date.now() - waktuKontakTerakhir) > BATAS_KONTAK_MS;
+  if (hilang === sedangKontakHilang) return; // tidak ada perubahan, jangan spam
+  sedangKontakHilang = hilang;
+
+  if (hilang) {
+    console.warn('[relay] semua kanal band power bernilai 0.00 Bel — headset kemungkinan lepas dari kepala');
+    siarkan({
+      tipe: 'status',
+      state: 'error',
+      teks: 'Headset tidak menempel di kepala — semua elektroda mengirim data kosong. ' +
+            'Pasang kembali headset-nya sampai band power di atas bergerak lagi.'
+    });
+    return;
+  }
+
+  /* Kontaknya pulih. statusTerakhir dinolkan supaya kirimStatusJikaBerubah()
+     menyiarkan "connected" lagi — tanpa ini status merahnya menempel selamanya
+     dan tombol rekam tetap terkunci padahal datanya sudah sehat. Pola yang
+     sama dipakai periksaBandPowerHilang() waktu band power akhirnya masuk. */
+  statusTerakhir = null;
+  console.log('[relay] kontak elektroda pulih — band power sah lagi');
+}
 
 /* Peringatan untuk satu kemungkinan kegagalan yang paling membingungkan:
    data OSC MASUK dengan lancar, tapi isinya cuma sinyal mentah (/eeg, /acc,
@@ -447,6 +535,15 @@ var sudahMemperingatkan = false;
 function periksaBandPowerHilang() {
   if (sudahMemperingatkan) return;
   if (waktuPaketTerakhir === 0) return; // belum ada data sama sekali
+
+  /* Pernah ada band power yang sah, walau cuma sekali? Berarti sumbernya
+     terbukti MAMPU mengirim band power, dan pertanyaan yang ditangani fungsi
+     ini sudah terjawab selamanya. Kalau sekarang angkanya kosong, penyebabnya
+     kontak elektroda — itu wilayah periksaKontakHilang(), dengan kalimat yang
+     jauh lebih berguna buat peneliti ("headset tidak menempel") daripada
+     kalimat di sini ("aktifkan band power di aplikasi Muse"). Tanpa penjaga
+     ini kedua pemeriksa berebut menyiarkan status dan layar jadi berkedip. */
+  if (waktuKontakTerakhir !== 0) return;
   if (Date.now() - waktuPaketTerakhir > BATAS_SEPI_MS) return; // aliran sudah putus
 
   var adaSatuBand = Object.keys(powerTerbaru).some(function (key) {
