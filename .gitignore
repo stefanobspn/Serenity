@@ -30,8 +30,11 @@ android/
 # .opencode/    : konfigurasi + node_modules asisten coding OpenCode. Isinya
 #                 ribuan file dependency yang tidak ada hubungannya dengan
 #                 aplikasi, dan tiap orang bisa pakai asisten yang berbeda.
+# .claude/      : pengaturan asisten coding Claude Code. Sama seperti di atas,
+#                 ini pilihan perkakas tiap orang, bukan bagian aplikasinya.
 # graphify-out/ : hasil pemetaan knowledge graph (graph.json, laporan, HTML).
 #                 File turunan yang bisa dibuat ulang kapan saja dari kode,
 #                 jadi tidak perlu ikut dilacak git.
 .opencode/
+.claude/
 graphify-out/

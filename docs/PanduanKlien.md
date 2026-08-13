@@ -66,15 +66,21 @@ Isinya tersimpan otomatis, jadi cukup sekali diisi.
 
 Ketuk tombol **Send Test**.
 
-Akan muncul pesan sekilas di bawah layar: *"Sent to ... — check laptop
-terminal"*.
+Akan muncul pesan sekilas di bawah layar HP: *"Sent to ..."*. Pesan itu cuma
+berarti "sudah dikirim", **bukan** "sudah diterima".
 
-Lalu **kabari Stefano** untuk memastikan paketnya benar-benar sampai di server.
-Pesan di HP cuma berarti "sudah dikirim", **bukan** berarti "sudah diterima" —
-jadi konfirmasi dari sisi server itu wajib.
+Yang membuktikan sampai adalah **website-nya sendiri**. Buka halaman EEG
+Monitor di laptop, dan kalau paketnya benar-benar tiba akan muncul baris:
 
-Kalau sudah dikonfirmasi sampai, persiapannya selesai. Bagian ini tidak perlu
-diulang lagi.
+> Paket dari HP (192.168.x.x) pernah sampai jam 09.28.20 — jaringan OK.
+
+Baris itu **menetap** di layar, jadi tidak masalah kalau Anda sedang tidak
+menatap laptop waktu menekan Send Test. Kalau baris itu muncul, jaringannya
+terbukti jalan dan persiapan ini tidak perlu diulang lagi.
+
+Kalau setelah beberapa kali Send Test baris itu tidak juga muncul, kabari
+Stefano — kemungkinan besar alamat IP-nya salah atau HP dan laptop tidak berada
+di jaringan yang sama.
 
 ---
 
@@ -117,32 +123,54 @@ Nama → Kuesioner PSS-5 → SEES-10 → Skala Lapar → EEG Monitor → Hasil A
 
 ## 2.5 Periksa kualitas sinyal
 
-Di halaman **EEG Monitor**, perhatikan bagian **Kualitas Sinyal**. Keempat
-elektroda harus **bagus**.
+Di halaman **EEG Monitor**, perhatikan bagian **Kualitas Sinyal**. Tiap
+elektroda akan tertulis **bagus**, **sedang**, atau **jelek**.
 
-Kalau ada yang **sedang** atau **jelek**:
+**"Sedang" itu sudah cukup untuk merekam.** Jangan habiskan waktu mengejar
+keempatnya jadi "bagus" — pada praktiknya hampir selalu ada satu yang bertahan
+di "sedang", dan itu wajar. Tombol **Mulai Rekam** cuma dikunci kalau ada
+elektroda yang benar-benar **jelek** (artinya lepas atau tidak menyentuh kulit
+sama sekali).
+
+Kalau ada yang **jelek**:
 
 - rapikan lagi posisi headset
 - pastikan kulit di titik elektroda tidak tertutup rambut
 - minta peserta diam sebentar (banyak gerak bikin sinyal kacau)
 
-Tombol **Mulai Rekam** memang sengaja dikunci selama masih ada elektroda yang
-jelek. Ini bukan error — itu mencegah data sampah ikut terekam.
-
-> Kalau ada satu elektroda yang benar-benar tidak mau bagus (misalnya rambut
-> sangat tebal), ada centang **"Rekam saja walaupun ada elektroda yang jelek"**.
-> Pakai ini seperlunya saja, dan **catat kejadiannya** — kualitas data peserta
-> itu jadi lebih rendah dan itu perlu diketahui waktu analisis.
+> Kalau ada satu elektroda yang benar-benar tidak mau lepas dari "jelek"
+> (misalnya rambut sangat tebal), ada centang **"Rekam saja walaupun ada
+> elektroda yang jelek"**. Pakai ini seperlunya saja. Tidak perlu dicatat
+> manual — aplikasinya sudah ikut menyimpan mutu sinyal tiap sesi ke file CSV
+> (kolom `kualitas_terburuk_*`, `persen_jelek_*`, dan `kualitas_diabaikan`),
+> jadi waktu analisis nanti ketahuan sendiri sesi mana yang diambil dalam
+> kondisi kurang ideal.
 
 ## 2.6 Rekam EEG 1 (baseline)
 
 1. Pastikan angka Delta/Theta/Alpha/Beta/Gamma sudah bergerak
 2. Ketuk **Mulai Rekam**
-3. Peserta duduk tenang
-4. Setelah dirasa cukup, ketuk **Stop Rekam**
+3. Layar akan menampilkan **"Masa tenang... 30 detik lagi"** — ini normal,
+   bukan macet. Selama 30 detik itu peserta duduk santai dan datanya sengaja
+   **belum** dikumpulkan
+4. Setelah hitungannya habis, tulisannya berubah jadi "Merekam... sekian detik
+   berjalan". Baru dari sinilah datanya dihitung
+5. Setelah 2 menit, ketuk **Stop Rekam**
 
-Lama perekaman bebas, tapi sebaiknya **konsisten untuk semua peserta**
-(misalnya semuanya 2 menit) supaya hasilnya bisa dibandingkan.
+> **Kenapa ada masa tenang.** Detik-detik awal tiap rekaman selalu bergolak —
+> peserta masih membetulkan posisi duduk dan elektrodanya baru menyesuaikan
+> diri. Waktu diuji, 50 detik pertama menghasilkan angka yang jauh berbeda dari
+> 50 detik terakhir pada sesi yang sama. Kalau bagian itu ikut terekam, selisih
+> antara Tahap Satu dan Tahap Dua jadi tercampur dengan gejolak awal ini, bukan
+> murni efek yang diteliti. Biarkan centangnya menyala.
+>
+> Kalau menekan **Stop Rekam** selagi masa tenang masih berjalan, perekamannya
+> dianggap **batal** — tidak ada data yang tersimpan dan tidak ada hasil lama
+> yang tertimpa. Tinggal tekan Mulai Rekam lagi.
+
+**Pakai lama yang sama untuk semua peserta dan untuk kedua sesi** — misalnya
+2 menit untuk EEG 1 dan 2 menit untuk EEG 2. Durasi yang tidak sama membuat
+kedua sesi tidak setara waktu dibandingkan.
 
 ## 2.7 Aktivitas
 
@@ -153,8 +181,11 @@ aritmatika). Headset **tetap dipakai**, jangan dilepas.
 
 ## 2.8 Rekam EEG 2
 
-Ketuk **Mulai Rekam EEG 2**, lalu **Stop Rekam** setelah selesai. Usahakan
-durasinya sama dengan EEG 1.
+Ketuk **Mulai Rekam EEG 2**. Masa tenang 30 detik berlaku lagi di sini, dan itu
+justru pas: mulailah aktivitasnya lebih dulu, biarkan 30 detik itu lewat sambil
+peserta masuk ke ritme tugasnya, baru datanya dikumpulkan.
+
+Setelah durasinya sama dengan EEG 1 (misalnya 2 menit), ketuk **Stop Rekam**.
 
 Halaman akan otomatis pindah ke **Hasil Akhir**.
 
@@ -195,6 +226,20 @@ Periksa berurutan:
 Hampir selalu karena layar HP mati atau aplikasinya pindah ke belakang.
 Ulangi perekaman peserta itu dari awal.
 
+## Muncul "Headset tidak menempel di kepala"
+
+Artinya paketnya tetap sampai, tapi elektrodanya sudah tidak menyentuh kulit —
+biasanya headset-nya melorot atau terlepas. Angka band power akan berhenti
+bergerak dan tombol rekam ikut terkunci sampai kontaknya pulih.
+
+Pasang ulang headset-nya sampai angkanya bergerak lagi, lalu **ulangi
+perekaman peserta itu dari awal**. Data yang terlanjur terkumpul sebelum
+headset lepas tidak bisa dipakai.
+
+> Peringatan ini sengaja dibuat, karena sebelumnya kegagalan ini tidak
+> kelihatan sama sekali: layar tetap menampilkan angka yang meyakinkan padahal
+> headset-nya tergeletak di meja.
+
 ## Kualitas sinyal tidak mau bagus
 
 - Basahi sedikit titik kontak di belakang telinga dengan air (jangan basah
@@ -220,7 +265,7 @@ di bagian pertama.
 - [ ] Headset terisi baterai
 - [ ] HP terisi baterai, waktu layar-mati sudah diperpanjang
 - [ ] Aplikasi sudah terpasang, IP dan port sudah terisi
-- [ ] **Send Test** sudah dicoba dan dikonfirmasi Stefano
+- [ ] **Send Test** sudah dicoba dan baris "jaringan OK" muncul di website
 - [ ] Website sudah bisa dibuka di Chrome
 - [ ] Sudah coba rekam singkat sampai halaman Hasil Akhir
 - [ ] Sudah coba unduh CSV dan filenya bisa dibuka di Excel
@@ -231,14 +276,17 @@ di bagian pertama.
 
 # Yang perlu dilaporkan ke Stefano saat uji coba pertama
 
-Karena ini pertama kalinya dipakai dengan headset sungguhan, tolong kabari:
+Seluruh alur ini — dari headset, HP, sampai file CSV-nya — sudah diuji dengan
+headset Muse sungguhan, jadi bagian dasarnya tidak lagi jadi pertanyaan
+terbuka. Yang masih berguna untuk dikabari:
 
-1. Apakah **Send Test** berhasil sampai?
-2. Setelah headset tersambung dan Enable dicentang, apakah **angka band power
-   di website bergerak**?
-3. Kalau angkanya **tidak** muncul padahal Send Test berhasil — ini kemungkinan
-   perlu penyesuaian di aplikasi, dan Stefano perlu tahu untuk memperbaikinya.
-4. Apakah **Kualitas Sinyal** bisa mencapai "bagus" di keempat elektroda?
+1. Apakah baris **"jaringan OK"** muncul waktu Send Test dicoba di tempat Anda?
+   Ini satu-satunya bagian yang bergantung pada jaringan masing-masing.
+2. Sampai level apa **Kualitas Sinyal** bisa dicapai di kepala peserta Anda —
+   "bagus" semua, atau ada yang bertahan di "sedang"? (Sekali lagi: "sedang"
+   itu tidak apa-apa, ini cuma untuk catatan.)
+3. Kalau muncul pesan yang tidak dijelaskan di panduan ini, kirim fotonya.
 
-Nomor 2 dan 3 yang paling penting — bagian itu belum pernah diuji dengan
-headset asli karena alatnya ada di tangan Anda.
+Yang paling penting: **jangan menghapus file CSV yang sudah diunduh**, bahkan
+dari sesi percobaan. Kalau ada yang janggal di datanya, file itu yang paling
+cepat menunjukkan sebabnya.
