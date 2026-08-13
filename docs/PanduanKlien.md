@@ -7,23 +7,35 @@ Yang perlu disiapkan:
 
 - Headset **Muse S Gen 2** (sudah terisi baterai)
 - **HP Android** (Android 6 ke atas)
-- **Laptop Windows** yang terhubung internet
-- File **APK** dan **alamat website** yang dikirim Stefano
+- **Laptop** dengan **Node.js** terpasang, plus folder Serenity
+- File **APK** yang dikirim Stefano
+- **WiFi** yang bisa dipakai HP dan laptop bersama-sama
 
-> Laptop tidak perlu dipasangi apa pun. Cukup buka website lewat Chrome.
+> Tidak ada server dan tidak butuh internet. Semua datanya berjalan di dalam
+> jaringan WiFi Anda sendiri dan tidak pernah keluar dari ruangan.
 
 ---
 
 ## Gambaran alurnya
 
 ```
-Headset Muse  →  HP  →  internet  →  Website Serenity di laptop
-              Bluetooth
+Headset Muse  →  HP  →  WiFi lokal  →  Relay di laptop  →  Halaman Serenity
+              Bluetooth                (jendela hitam)      (di Chrome)
 ```
 
 HP-nya bertugas sebagai perantara: dia yang menyambung ke headset lewat
-Bluetooth, lalu mengirim datanya ke website. Jadi **HP harus tetap menyala dan
-aplikasinya tetap terbuka** selama perekaman.
+Bluetooth, lalu mengirim datanya ke laptop lewat WiFi. Jadi **HP harus tetap
+menyala dan aplikasinya tetap terbuka** selama perekaman.
+
+Di laptop ada satu program kecil bernama **relay** yang harus berjalan selama
+sesi. Dialah yang menerima data dari HP sekaligus menyajikan halaman
+Serenity-nya. Kalau relay-nya ditutup, halamannya ikut mati.
+
+> **Kenapa tidak pakai website di internet saja?** Dulu memang begitu, tapi
+> cara itu dilepas. Menaruhnya di internet berarti nama peserta dan data
+> EEG-nya melewati server publik tanpa login, dan port datanya terbuka untuk
+> siapa saja. Untuk penelitian yang melibatkan siswa, menjalankannya di
+> jaringan sendiri jauh lebih aman — dan kebetulan juga lebih sederhana.
 
 ---
 
@@ -50,19 +62,43 @@ Setelah terpasang, aplikasinya bernama **TestLibMuseAndroid**.
 Buka aplikasinya. Akan muncul permintaan izin Bluetooth — ketuk **Izinkan**.
 Kalau tidak diizinkan, aplikasinya tidak akan bisa menemukan headset.
 
-## 1.3 Isi alamat server
+## 1.3 Jalankan relay di laptop
 
-Gulir ke bawah sampai bagian **OSC output**. Ada tiga kolom:
+Buka folder Serenity di laptop, lalu jalankan:
+
+```
+node bridge/relay.js
+```
+
+Jendelanya akan menampilkan beberapa baris, dan **satu baris yang paling
+penting**:
+
+> `[relay] alamat IP mesin ini: 192.168.1.5 (wlan0)`
+
+Catat angka itu — itulah alamat yang nanti diisi di HP. Angkanya berbeda-beda
+tiap jaringan, dan **bisa berubah kalau laptop pindah WiFi atau di-restart**,
+jadi periksa lagi baris ini tiap kali mau mulai sesi.
+
+Biarkan jendela itu terbuka selama sesi berlangsung. Menutupnya sama dengan
+mematikan aplikasinya.
+
+## 1.4 Isi alamat di HP
+
+Gulir ke bawah sampai bagian **OSC output** di aplikasi HP. Ada tiga kolom:
 
 | Kolom | Diisi |
 |---|---|
-| Kolom kiri (IP) | **alamat IP yang dikirim Stefano** |
+| Kolom kiri (IP) | **alamat IP laptop** dari langkah 1.3 |
 | Kolom tengah (Port) | **7000** |
 | Kotak centang "Enable" | biarkan dulu, nanti dicentang |
 
-Isinya tersimpan otomatis, jadi cukup sekali diisi.
+Isinya tersimpan otomatis, jadi cukup diisi ulang kalau alamat IP laptopnya
+berubah.
 
-## 1.4 Tes koneksi — PENTING
+Pastikan **HP dan laptop tersambung ke WiFi yang sama**. Kalau berbeda
+jaringan, datanya tidak akan pernah sampai walaupun semua pengaturannya benar.
+
+## 1.5 Tes koneksi — PENTING
 
 Ketuk tombol **Send Test**.
 
@@ -111,9 +147,17 @@ Kalau layar mati, pengiriman datanya ikut berhenti dan perekaman gagal tanpa
 peringatan. Kalau perlu, atur dulu *Setelan → Layar → Waktu layar mati* ke
 durasi paling lama.
 
-## 2.4 Buka website di laptop
+## 2.4 Buka halaman Serenity di laptop
 
-Buka **Google Chrome**, masuk ke alamat yang dikirim Stefano.
+Pastikan relay-nya masih berjalan (langkah 1.3 — jendela hitam itu masih
+terbuka). Lalu buka **Google Chrome** di laptop yang sama, ke alamat:
+
+```
+http://localhost:8080/pages/userform.html
+```
+
+> Alamat `localhost` ini dibuka **di laptop yang menjalankan relay**, bukan di
+> HP. HP tidak perlu membuka halaman apa pun — tugasnya cuma mengirim data.
 
 Isi nama peserta, lalu ikuti alurnya:
 
@@ -217,9 +261,14 @@ Periksa berurutan:
 1. **Layar HP masih menyala?** Ini penyebab paling sering.
 2. **Kotak "Enable" masih tercentang?**
 3. **Connection Status di HP masih `connected`?**
-4. **HP masih ada internet?**
-5. Coba ketuk **Send Test** lagi, lalu kabari Stefano untuk cek dari sisi
-   server.
+4. **Jendela relay di laptop masih terbuka?** Kalau tertutup, jalankan lagi
+   `node bridge/relay.js`.
+5. **HP dan laptop masih di WiFi yang sama?**
+6. **Alamat IP di HP masih cocok?** IP laptop bisa berubah setelah pindah WiFi
+   atau restart. Bandingkan dengan baris `alamat IP mesin ini:` di jendela
+   relay, dan perbaiki isian di HP kalau berbeda.
+7. Coba ketuk **Send Test** lagi, lalu lihat apakah baris "jaringan OK" muncul
+   di halaman EEG Monitor.
 
 ## Angka muncul tapi berhenti di tengah perekaman
 
@@ -253,10 +302,20 @@ headset lepas tidak bisa dipakai.
 - Matikan lalu nyalakan lagi Bluetooth di HP
 - Pastikan headset tidak sedang tersambung ke HP/aplikasi lain
 
-## Website terbuka tapi statusnya "Menunggu data dari HP..."
+## Halaman terbuka tapi statusnya "Menunggu data dari HP..."
 
-Berarti website-nya sehat, tapi data dari HP belum sampai. Ulangi pemeriksaan
-di bagian pertama.
+Berarti relay dan halamannya sehat, tapi data dari HP belum sampai. Ulangi
+pemeriksaan di bagian pertama.
+
+## Halaman tidak mau terbuka sama sekali di Chrome
+
+Relay-nya belum jalan. Buka lagi folder Serenity dan jalankan
+`node bridge/relay.js`, lalu muat ulang halamannya.
+
+## Muncul "Port 8080 sudah dipakai"
+
+Berarti relay-nya sudah berjalan di jendela lain — tidak perlu dijalankan dua
+kali. Cukup buka halamannya di Chrome.
 
 ---
 
@@ -264,9 +323,11 @@ di bagian pertama.
 
 - [ ] Headset terisi baterai
 - [ ] HP terisi baterai, waktu layar-mati sudah diperpanjang
-- [ ] Aplikasi sudah terpasang, IP dan port sudah terisi
-- [ ] **Send Test** sudah dicoba dan baris "jaringan OK" muncul di website
-- [ ] Website sudah bisa dibuka di Chrome
+- [ ] HP dan laptop tersambung ke WiFi yang sama
+- [ ] Relay sudah jalan di laptop, dan alamat IP-nya sudah dicatat
+- [ ] Aplikasi sudah terpasang, IP dan port sudah terisi sesuai catatan itu
+- [ ] **Send Test** sudah dicoba dan baris "jaringan OK" muncul di halaman
+- [ ] Halaman sudah bisa dibuka di Chrome (`http://localhost:8080`)
 - [ ] Sudah coba rekam singkat sampai halaman Hasil Akhir
 - [ ] Sudah coba unduh CSV dan filenya bisa dibuka di Excel
 - [ ] Setelah percobaan, tekan **Mulai Sesi Baru** supaya data uji coba tidak
