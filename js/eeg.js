@@ -65,7 +65,6 @@ var NAMA_ELEKTRODA = ['TP9 (kiri belakang)', 'AF7 (kiri depan)', 'AF8 (kanan dep
 
 
 // --- Ambil elemen-elemen HTML yang isinya akan kita ubah lewat JS ---
-var connectBtn = document.getElementById('connectBtn');
 var statusEl = document.getElementById('status');
 var jejakJaringanEl = document.getElementById('jejakJaringan');
 var batteryEl = document.getElementById('battery');
@@ -501,7 +500,6 @@ function handleStatusChange(text, state) {
   // Tandai secara visual (bukan cuma lewat teks) kalau statusnya error,
   // supaya kelihatan beda dari status biasa seperti "menghubungkan..."
   statusEl.classList.toggle('status-error', state === 'error');
-  connectBtn.disabled = state === 'connecting';
 
   // Tombol rekam cuma boleh ditekan kalau data sedang mengalir, sinyalnya
   // layak, dan tidak sedang merekam (lihat bolehMulaiRekam).
@@ -551,7 +549,7 @@ function hubungkanKeBridge() {
     // Ini berarti browser tidak bisa menghubungi relay-nya sama sekali
     // (relay belum dijalankan, atau baru saja dimatikan). Browser akan
     // mencoba menyambung lagi sendiri, jadi di sini cukup memberi tahu.
-    handleStatusChange('bridge tidak bisa dihubungi. Pastikan "node bridge/relay.js" sedang jalan.', 'error');
+    handleStatusChange('bridge tidak bisa dihubungi. Pastikan "node bridge/relay.js" sedang jalan, lalu muat ulang halaman ini (F5).', 'error');
   };
 }
 
@@ -605,10 +603,19 @@ function kosongkanTampilan() {
   }
 }
 
-// Tombol ini sebenarnya jarang dibutuhkan, karena EventSource menyambung
-// ulang sendiri. Disediakan untuk keadaan yang benar-benar mentok — misalnya
-// relay-nya baru saja dijalankan setelah halaman ini terlanjur dibuka.
-connectBtn.addEventListener('click', hubungkanKeBridge);
+/* Perhatikan: tidak ada tombol "sambungkan" di halaman ini, dan itu disengaja.
+
+   Dulu tombolnya ada, sisa dari zaman browser menyambung sendiri ke headset
+   lewat Bluetooth. Sekarang browser cuma bicara ke relay, dan EventSource
+   sudah menyambung ulang sendiri setiap kali koneksinya putus — jadi tombol
+   itu tidak pernah benar-benar memperbaiki apa pun. Lebih buruk lagi, di
+   halaman EEG namanya terbaca seperti "sambungkan ulang headset", sehingga
+   klien yang HP-nya belum mengirim data menekannya berulang kali dan menyangka
+   aplikasinya rusak — padahal yang perlu dicek ada di HP, bukan di sini.
+
+   Kalau suatu saat benar-benar mentok, jalan keluarnya cuma satu dan berlaku
+   untuk semua kasus: muat ulang halaman (F5). Itu sebabnya saran F5 ikut
+   ditulis di pesan error di atas. */
 
 // Langsung sambung begitu halaman dibuka. Tidak ada yang perlu diklik
 // peserta: kalau relay dan HP-nya sudah siap, datanya langsung muncul.
@@ -708,9 +715,11 @@ function buatDataDummy() {
 
 demoBtn.addEventListener('click', function () {
   demoBtn.disabled = true;
-  connectBtn.disabled = true; // cegah nyoba sambung ke bridge bareng demo jalan
 
-  if (sumberData) sumberData.close(); // hentikan data asli supaya tidak campur
+  // Hentikan data asli supaya tidak campur dengan angka dummy. close() juga
+  // membuat EventSource berhenti mencoba menyambung ulang, jadi cukup ini —
+  // tidak ada jalan lain buat data asli menyelinap masuk selagi demo jalan.
+  if (sumberData) sumberData.close();
 
   handleStatusChange('Terhubung (data dummy, khusus development)', 'connected');
   batteryEl.textContent = 'Battery: 85% (dummy)';
