@@ -48,8 +48,12 @@
                     </li>
                 </ul>
                 <figure>
-                    <canvas id="eegChart-eeg1" width="900" height="280"></canvas>
+                    <canvas id="eegChart-eeg1" width="900" height="380"></canvas>
                 </figure>
+                <div class="aksi-grafik">
+                    <button type="button" id="unduhPngEeg1Btn" class="btn-opsi">🖼️ Unduh Grafik EEG 1 (PNG)</button>
+                    <button type="button" id="unduhEdfEeg1Btn" class="btn-opsi">📄 Unduh File EEG 1 (.EDF)</button>
+                </div>
 
                 <h3>EEG 2 (Setelah Aktivitas)</h3>
                 <ul id="bandsEeg2" class="bands-list">
@@ -75,8 +79,12 @@
                     </li>
                 </ul>
                 <figure>
-                    <canvas id="eegChart-eeg2" width="900" height="280"></canvas>
+                    <canvas id="eegChart-eeg2" width="900" height="380"></canvas>
                 </figure>
+                <div class="aksi-grafik">
+                    <button type="button" id="unduhPngEeg2Btn" class="btn-opsi">🖼️ Unduh Grafik EEG 2 (PNG)</button>
+                    <button type="button" id="unduhEdfEeg2Btn" class="btn-opsi">📄 Unduh File EEG 2 (.EDF)</button>
+                </div>
 
                 <p id="verdictStres" class="catatan"></p>
                 <p id="verdictLapar" class="catatan"></p>
@@ -88,8 +96,12 @@
             <div id="rekomendasi">Memuat...</div>
         </section>
 
-        <button id="downloadCsvBtn">Unduh Data (CSV)</button>
-        <button id="mulaiLagiBtn">Mulai Sesi Baru</button>
+        <div class="aksi-utama">
+            <button id="downloadCsvRingkasBtn" class="btn-utama">📊 Unduh Ringkasan Hasil (CSV)</button>
+            <button id="downloadCsvDetailBtn" class="btn-sekunder">📈 Unduh Detail Waktu (CSV)</button>
+            <button id="downloadEdfAllBtn" class="btn-sekunder">📑 Unduh Semua File (.EDF)</button>
+            <button id="mulaiLagiBtn" class="btn-batal">Mulai Sesi Baru</button>
+        </div>
         <p id="csvKosong" class="catatan" hidden>Belum ada data EEG untuk diunduh.</p>
 
     </main>
@@ -97,6 +109,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
     <script src="../js/storage.js"></script>
     <script src="../js/bands.js"></script>
+    <script src="../js/edf.js"></script>
     <script src="../js/hasil.js"></script>
 </body>
 

@@ -63,16 +63,44 @@ function tampilkanRingkasanKuesioner() {
 // yang sama persis, jadi warna Alpha di sini pasti sama dengan warna Alpha
 // di halaman monitor tanpa perlu diingat-ingat.
 
-// Gambar satu grafik garis tren band power sepanjang satu sesi rekam (EEG 1
-// atau EEG 2), dari titik-titik data per-sampel yang disimpan eeg.js
-// (lihat dataEeg.interval, tiap titik = data per ~0.1 detik).
-// Beda dengan grafik live di eeg.js: grafik di sini statis, semua datanya
-// sudah lengkap begitu halaman ini dibuka, jadi tidak perlu logic
-// tambah-titik/geser-titik seperti grafik live itu.
+// Gambar satu grafik garis tren band power bertingkat ("grafik rumput" klinis)
+// sepanjang satu sesi rekam (EEG 1 atau EEG 2), dari titik-titik data per-sampel.
+// Memakai 5 sumbu Y bertingkat (stack: 'eeg_stack') agar Delta, Theta, Alpha, Beta,
+// dan Gamma masing-masing memiliki jalurnya sendiri dan tidak saling tumpang tindih.
 function gambarGrafikEeg(prefix, dataEeg) {
   var titikTitik = dataEeg.interval;
+  var canvas = document.getElementById('eegChart-' + prefix);
+  if (!canvas) return;
 
-  new Chart(document.getElementById('eegChart-' + prefix).getContext('2d'), {
+  var scalesConfig = {
+    x: {
+      title: { display: true, text: 'Waktu (detik)', font: { size: 12 } },
+      ticks: { maxTicksLimit: 15 }
+    }
+  };
+
+  BANDS.forEach(function (band) {
+    var axisId = 'y_' + band.key;
+    scalesConfig[axisId] = {
+      type: 'linear',
+      stack: 'eeg_stack',
+      stackWeight: 1,
+      grid: { drawOnChartArea: true, color: '#f1f5f9' },
+      title: {
+        display: true,
+        text: band.label,
+        color: band.color,
+        font: { weight: 'bold', size: 11 }
+      },
+      ticks: {
+        maxTicksLimit: 2,
+        color: band.color,
+        font: { size: 9 }
+      }
+    };
+  });
+
+  new Chart(canvas.getContext('2d'), {
     type: 'line',
     data: {
       labels: titikTitik.map(function (titik) { return titik.detik + 's'; }),
@@ -82,23 +110,25 @@ function gambarGrafikEeg(prefix, dataEeg) {
           data: titikTitik.map(function (titik) { return titik[band.key]; }),
           borderColor: band.color,
           backgroundColor: band.color,
-          borderWidth: 2,
+          yAxisID: 'y_' + band.key,
+          borderWidth: 1.5,
           pointRadius: 0,
           pointHoverRadius: 3,
-          tension: 0.25
+          tension: 0.2
         };
       })
     },
     options: {
-      scales: {
-        x: {
-          ticks: {
-            maxTicksLimit: 12
-          }
-        },
-        y: { beginAtZero: true }
-      },
-      plugins: { legend: { position: 'top', labels: { boxWidth: 12 } } }
+      responsive: true,
+      animation: false,
+      scales: scalesConfig,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: { boxWidth: 12 }
+        }
+      }
     }
   });
 }
@@ -247,57 +277,117 @@ function tampilkanRekomendasi() {
 }
 
 
-/* ===== Unduh CSV (kuesioner + EEG) ===== */
+/* ===== Fitur Ekspor: Gambar Grafik (PNG), File Medis (.EDF), & CSV ===== */
 
-// Bungkus satu nilai supaya aman dipakai di dalam file CSV. Aturan CSV:
-// kalau nilainya mengandung koma, tanda kutip dua, atau baris baru,
-// seluruh nilai itu harus dibungkus tanda kutip dua, dan tiap tanda kutip
-// dua di dalamnya digandakan jadi dua. Tanpa ini, nama peserta yang
-// mengandung koma (misal "Ani, S.Pd") bisa terbaca sebagai dua kolom dan
-// menggeser semua kolom setelahnya waktu file dibuka di spreadsheet.
+// Bungkus satu nilai supaya aman dipakai di dalam file CSV.
 function escapeNilaiCsv(nilai) {
-  var teks = String(nilai);
+  var teks = String(nilai === null || nilai === undefined ? '' : nilai);
   var perluDibungkus = teks.indexOf(',') !== -1 || teks.indexOf('"') !== -1 || teks.indexOf('\n') !== -1;
   if (!perluDibungkus) return teks;
   return '"' + teks.replace(/"/g, '""') + '"';
 }
 
-/* Bentuk file yang dipakai: format "panjang" (long) — satu baris = satu
-   titik data per INTERVAL_DETIK detik (lihat eeg.js), bukan satu baris =
-   satu peserta. Kolom identitas & kuesioner sengaja diulang sama persis di
-   tiap baris.
-
-   Kenapa begitu, padahal kelihatannya boros? Karena lama rekam tiap peserta
-   tidak pernah sama, jadi jumlah titik datanya juga beda-beda. Kalau tiap
-   titik dijadikan kolom sendiri (detik_10, detik_20, detik_30, ...), peserta
-   yang rekamnya lama akan punya lebih banyak kolom daripada yang sebentar —
-   file antar-peserta jadi tidak seragam dan tidak bisa ditumpuk jadi satu
-   spreadsheet. Dengan format panjang, perbedaan lama rekam ditampung di
-   jumlah BARIS, sementara jumlah kolomnya selalu tetap. Menumpuk file
-   beberapa peserta tinggal menempelkan barisnya ke bawah.
-
-   Angka olahan (rata-rata band, rasio Theta/Beta, verdict) sengaja tidak
-   ikut diekspor: semuanya bisa dihitung ulang di spreadsheet dari kolom
-   mentah di file ini (AVERAGE untuk rata-rata, kolom theta dibagi kolom
-   beta untuk rasio, MAX untuk puncak Alpha). Yang disimpan di sini cukup
-   data mentahnya saja. */
-
-// Kumpulkan satu baris data per titik interval dari EEG 1 dan EEG 2.
-//
-// Kalau satu bagian kuesioner belum pernah diisi (misal hasilakhir.html
-// dibuka langsung tanpa lewat alur kuesioner), nilainya diisi string kosong
-// '' supaya tetap menghasilkan CSV yang valid, bukan error.
-function siapkanDataCsv() {
+/* 1. CSV Ringkasan: 1 Baris per Peserta (Sangat Rapi untuk Excel / SPSS)
+   Menyimpan seluruh data identitas, hasil kuesioner, nilai rata-rata tiap
+   band EEG 1 & EEG 2, rasio Theta/Beta, puncak Alpha, kesimpulan, dan mutu sinyal.
+   Format ini membuat data 30-50 peserta penelitian bisa langsung ditumpuk
+   ke bawah menjadi satu tabel spreadsheet master tanpa ribuan baris berserakan. */
+function buatCsvRingkasan() {
   var hasil = ambilHasilKuesioner();
-
-  // Waktu unduh diambil SEKALI di sini, bukan di dalam loop di bawah. Kalau
-  // dipanggil per baris, tiap baris bisa dapat detik yang berbeda dan kolom
-  // ini jadi tidak bisa dipakai sebagai penanda "satu file = satu sesi unduh".
   var waktuUnduh = new Date().toLocaleString('id-ID');
 
-  // Bagian yang nilainya sama untuk semua baris (identitas + kuesioner)
-  // disusun sekali di luar loop, lalu dipakai ulang. Selain lebih hemat,
-  // ini menjamin semua baris benar-benar berisi angka yang sama persis.
+  var header = [
+    'waktu_unduh',
+    'nama_peserta',
+    'pss5_skor',
+    'pss5_status',
+    'sees10_rata_rata',
+    'sees10_status',
+    'hunger_skor',
+    'eeg1_delta',
+    'eeg1_theta',
+    'eeg1_alpha',
+    'eeg1_beta',
+    'eeg1_gamma',
+    'eeg1_rasio_theta_beta',
+    'eeg1_puncak_alpha',
+    'eeg2_delta',
+    'eeg2_theta',
+    'eeg2_alpha',
+    'eeg2_beta',
+    'eeg2_gamma',
+    'eeg2_rasio_theta_beta',
+    'eeg2_puncak_alpha',
+    'kesimpulan_stres',
+    'kesimpulan_lapar',
+    'eeg1_mutu_diabaikan',
+    'eeg2_mutu_diabaikan'
+  ];
+
+  var eeg1 = hasil.eeg1;
+  var eeg2 = hasil.eeg2;
+
+  var eeg1Rasio = (eeg1 && eeg1.theta && eeg1.beta && eeg1.beta.raw) ? (eeg1.theta.raw / eeg1.beta.raw).toFixed(2) : '';
+  var eeg2Rasio = (eeg2 && eeg2.theta && eeg2.beta && eeg2.beta.raw) ? (eeg2.theta.raw / eeg2.beta.raw).toFixed(2) : '';
+  var eeg1PuncakAlpha = (eeg1 && eeg1.interval) ? cariNilaiPuncak(eeg1.interval, 'alpha').toFixed(3) : '';
+  var eeg2PuncakAlpha = (eeg2 && eeg2.interval) ? cariNilaiPuncak(eeg2.interval, 'alpha').toFixed(3) : '';
+
+  var verdictStres = (eeg1 && eeg2) ? teksVerdictStres(hitungVerdictStres(eeg1, eeg2)) : '';
+  var verdictLapar = (eeg1 && eeg2) ? teksVerdictLapar(hitungVerdictLapar(eeg1, eeg2)) : '';
+
+  var baris = [
+    waktuUnduh,
+    hasil.peserta ? hasil.peserta.nama : '',
+    hasil.pss5 ? hasil.pss5.skor : '',
+    hasil.pss5 ? hasil.pss5.status : '',
+    hasil.sees10 ? hasil.sees10.rataRata.toFixed(2) : '',
+    hasil.sees10 ? hasil.sees10.status : '',
+    hasil.hunger ? hasil.hunger.skor : '',
+    (eeg1 && eeg1.delta) ? eeg1.delta.value : '',
+    (eeg1 && eeg1.theta) ? eeg1.theta.value : '',
+    (eeg1 && eeg1.alpha) ? eeg1.alpha.value : '',
+    (eeg1 && eeg1.beta) ? eeg1.beta.value : '',
+    (eeg1 && eeg1.gamma) ? eeg1.gamma.value : '',
+    eeg1Rasio,
+    eeg1PuncakAlpha,
+    (eeg2 && eeg2.delta) ? eeg2.delta.value : '',
+    (eeg2 && eeg2.theta) ? eeg2.theta.value : '',
+    (eeg2 && eeg2.alpha) ? eeg2.alpha.value : '',
+    (eeg2 && eeg2.beta) ? eeg2.beta.value : '',
+    (eeg2 && eeg2.gamma) ? eeg2.gamma.value : '',
+    eeg2Rasio,
+    eeg2PuncakAlpha,
+    verdictStres,
+    verdictLapar,
+    (eeg1 && eeg1.kualitas) ? (eeg1.kualitas.diabaikan ? 'ya' : 'tidak') : '',
+    (eeg2 && eeg2.kualitas) ? (eeg2.kualitas.diabaikan ? 'ya' : 'tidak') : ''
+  ];
+
+  return [header, baris].map(function (b) {
+    return b.map(escapeNilaiCsv).join(',');
+  }).join('\n');
+}
+
+function unduhCsvRingkasan() {
+  var teksCsv = '﻿' + buatCsvRingkasan();
+  var blob = new Blob([teksCsv], { type: 'text/csv;charset=utf-8' });
+  var urlSementara = URL.createObjectURL(blob);
+  var link = document.createElement('a');
+  var hasil = ambilHasilKuesioner();
+  var namaBersih = (hasil.peserta && hasil.peserta.nama) ? hasil.peserta.nama.replace(/\s+/g, '_') : 'peserta';
+  link.href = urlSementara;
+  link.download = 'ringkasan_hasil_' + namaBersih + '.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(urlSementara);
+}
+
+/* 2. CSV Detail Titik Waktu: Format panjang time-series (~10 baris per detik) */
+function siapkanDataCsvDetail() {
+  var hasil = ambilHasilKuesioner();
+  var waktuUnduh = new Date().toLocaleString('id-ID');
+
   var kolomPeserta = [
     waktuUnduh,
     hasil.peserta ? hasil.peserta.nama : '',
@@ -312,28 +402,15 @@ function siapkanDataCsv() {
 
   ['eeg1', 'eeg2'].forEach(function (sesi) {
     var dataEeg = hasil[sesi];
-    if (!dataEeg) return;
+    if (!dataEeg || !dataEeg.interval) return;
 
-    /* Catatan mutu sinyal sesi ini (dibuat di selesaiRekam() pada js/eeg.js):
-       nilai kontak elektroda TERBURUK selama sesi, 1 = bagus, 2 = sedang,
-       4 = jelek/lepas. Nilainya sama untuk semua baris sesi ini, jadi disusun
-       sekali di luar loop seperti kolomPeserta.
-
-       Rekaman yang dibuat sebelum kolom ini ada tidak punya dataEeg.kualitas,
-       jadi diisi '' — sama seperti perlakuan untuk kuesioner yang belum diisi
-       di atas, supaya file CSV-nya tetap valid dan bukan malah error. */
     var mutu = dataEeg.kualitas;
     var kosong = ['', '', '', ''];
     var nilaiTerburuk = (mutu && mutu.terburuk) ? mutu.terburuk : kosong;
     var persenJelek = (mutu && mutu.persenJelek) ? mutu.persenJelek : kosong;
 
-    // Urutan elektroda: TP9 (kiri belakang), AF7 (kiri depan),
-    // AF8 (kanan depan), TP10 (kanan belakang) — sama dengan NAMA_ELEKTRODA
-    // di js/eeg.js, karena angkanya memang datang dari larik yang sama.
     var kolomMutu = nilaiTerburuk.slice(0, 4).concat(
       persenJelek.slice(0, 4).map(function (persen) {
-        // null = tidak ada data kualitas sama sekali selama sesi itu; dibedakan
-        // dari angka 0 yang artinya "ada datanya, dan tidak pernah jelek".
         return (persen === '' || persen === null) ? '' : persen.toFixed(1);
       })
     ).concat([
@@ -341,8 +418,6 @@ function siapkanDataCsv() {
     ]);
 
     dataEeg.interval.forEach(function (titik) {
-      // concat() bikin larik BARU tiap baris — kolomPeserta-nya sendiri tidak
-      // ikut berubah, jadi aman dipakai berulang untuk baris berikutnya.
       var teksDetik = typeof titik.detik === 'number' ? titik.detik.toFixed(2) : titik.detik;
       barisBarisData.push(kolomPeserta.concat([
         sesi,
@@ -359,11 +434,7 @@ function siapkanDataCsv() {
   return barisBarisData;
 }
 
-// Gabungkan jadi teks CSV: baris pertama nama kolom, sisanya data.
-// Urutan nama kolom di sini WAJIB sama persis dengan urutan nilai yang
-// disusun siapkanDataCsv() di atas — kalau salah satu diubah, yang satunya
-// harus ikut diubah, kalau tidak isi kolomnya jadi bergeser.
-function buatTeksCsv() {
+function buatTeksCsvDetail() {
   var header = [
     'waktu_unduh', 'nama_peserta',
     'pss5_skor', 'pss5_status',
@@ -371,90 +442,149 @@ function buatTeksCsv() {
     'hunger_skor',
     'sesi', 'detik',
     'delta', 'theta', 'alpha', 'beta', 'gamma',
-    /* Mutu kontak elektroda selama sesi, dua ukuran yang saling melengkapi:
-       - kualitas_terburuk_* : nilai terburuk yang pernah muncul.
-         1 = bagus, 2 = sedang, 4 = jelek/lepas.
-       - persen_jelek_*      : berapa persen waktu elektroda itu berstatus
-         jelek. Ini yang sebenarnya menentukan data layak pakai atau tidak —
-         terburuk 4 dengan persen 0,3 cuma kedipan sesaat, sedangkan terburuk 4
-         dengan persen 40 berarti sesi itu sebaiknya diulang.
-       Kolom terakhir menandai apakah peneliti merekam sambil menembus kunci
-       kualitas ("ya"/"tidak"). */
     'kualitas_terburuk_tp9', 'kualitas_terburuk_af7',
     'kualitas_terburuk_af8', 'kualitas_terburuk_tp10',
     'persen_jelek_tp9', 'persen_jelek_af7',
     'persen_jelek_af8', 'persen_jelek_tp10',
     'kualitas_diabaikan'
   ];
-  var semuaBaris = [header].concat(siapkanDataCsv());
+  var semuaBaris = [header].concat(siapkanDataCsvDetail());
 
   return semuaBaris.map(function (baris) {
     return baris.map(escapeNilaiCsv).join(',');
   }).join('\n');
 }
 
-// Buat file CSV di memori (Blob) lalu picu download-nya lewat elemen <a>
-// tersembunyi yang diklik otomatis — ini trik standar buat "download file
-// dari JS" tanpa perlu link asli yang kelihatan di halaman.
-function unduhCsv() {
-  // '﻿' (BOM) di depan teks supaya Excel membaca huruf non-ASCII
-  // (misal nama peserta yang pakai huruf beraksen) dengan benar, bukan
-  // jadi karakter aneh. Tanpa ini beberapa versi Excel salah tebak encoding-nya.
-  var teksCsv = '﻿' + buatTeksCsv();
+function unduhCsvDetail() {
+  var teksCsv = '﻿' + buatTeksCsvDetail();
   var blob = new Blob([teksCsv], { type: 'text/csv;charset=utf-8' });
-
   var urlSementara = URL.createObjectURL(blob);
   var link = document.createElement('a');
+  var hasil = ambilHasilKuesioner();
+  var namaBersih = (hasil.peserta && hasil.peserta.nama) ? hasil.peserta.nama.replace(/\s+/g, '_') : 'peserta';
   link.href = urlSementara;
-  link.download = 'serenity-data-' + Date.now() + '.csv';
+  link.download = 'detail_titik_waktu_' + namaBersih + '.csv';
+  document.body.appendChild(link);
   link.click();
-
-  // Lepas alamat sementara tadi — blob URL tidak otomatis dibersihkan
-  // sendiri oleh browser, jadi harus di-revoke manual biar tidak
-  // menumpuk di memori.
+  document.body.removeChild(link);
   URL.revokeObjectURL(urlSementara);
 }
 
-
-// Kunci tombol unduh selama belum ada satu pun sesi EEG yang tersimpan.
-//
-// Kenapa dikunci, bukan dibiarkan tetap bisa diklik? Karena isi file ini
-// adalah baris-baris titik data EEG — tanpa data EEG, yang keluar cuma baris
-// nama kolom tanpa isi. File seperti itu gampang dikira rusak, dan yang lebih
-// bahaya: peserta bisa merasa datanya sudah aman terunduh padahal rekamannya
-// belum tersimpan sama sekali. Lebih jujur kalau tombolnya kelihatan mati
-// plus diberi catatan alasannya.
-//
-// Cukup salah satu sesi ada (eeg1 ATAU eeg2), karena satu sesi saja sudah
-// menghasilkan baris data yang valid — kolom "sesi" yang menandai baris itu
-// milik rekaman yang mana.
-function aturTombolUnduh() {
+/* 3. Unduh Gambar Grafik Rumput (PNG dengan latar belakang putih bersih) */
+function unduhGambarGrafik(prefix) {
   var hasil = ambilHasilKuesioner();
-  var adaDataEeg = !!(hasil.eeg1 || hasil.eeg2);
+  var namaBersih = (hasil.peserta && hasil.peserta.nama) ? hasil.peserta.nama.replace(/\s+/g, '_') : 'peserta';
+  var canvas = document.getElementById('eegChart-' + prefix);
+  if (!canvas) return;
 
-  document.getElementById('downloadCsvBtn').disabled = !adaDataEeg;
-  document.getElementById('csvKosong').hidden = adaDataEeg;
+  // Bikin canvas sementara dengan background putih agar tidak transparan waktu dibuka
+  var tempCanvas = document.createElement('canvas');
+  tempCanvas.width = canvas.width;
+  tempCanvas.height = canvas.height;
+  var tempCtx = tempCanvas.getContext('2d');
+  tempCtx.fillStyle = '#ffffff';
+  tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+  tempCtx.drawImage(canvas, 0, 0);
+
+  var link = document.createElement('a');
+  link.download = 'grafik_rumput_' + prefix + '_' + namaBersih + '.png';
+  link.href = tempCanvas.toDataURL('image/png');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
+/* 4. Unduh File Standar Medis .EDF (European Data Format) */
+function unduhEdfSesi(prefix) {
+  var hasil = ambilHasilKuesioner();
+  var dataEeg = hasil[prefix];
+  if (!dataEeg || !dataEeg.interval || dataEeg.interval.length === 0) {
+    alert('Belum ada data rekaman untuk ' + prefix.toUpperCase());
+    return;
+  }
+  var namaPeserta = (hasil.peserta && hasil.peserta.nama) ? hasil.peserta.nama : 'peserta';
+  unduhEdf(namaPeserta, prefix.toUpperCase(), dataEeg.interval);
+}
+
+function unduhSemuaEdf() {
+  var hasil = ambilHasilKuesioner();
+  var adaEeg1 = !!(hasil.eeg1 && hasil.eeg1.interval && hasil.eeg1.interval.length > 0);
+  var adaEeg2 = !!(hasil.eeg2 && hasil.eeg2.interval && hasil.eeg2.interval.length > 0);
+
+  if (!adaEeg1 && !adaEeg2) {
+    alert('Belum ada data rekaman EEG.');
+    return;
+  }
+
+  if (adaEeg1) unduhEdfSesi('eeg1');
+  if (adaEeg2) {
+    setTimeout(function () {
+      unduhEdfSesi('eeg2');
+    }, 600);
+  }
+}
+
+// Atur tombol aksi (enable/disable jika belum ada data)
+function aturTombolUnduh() {
+  var hasil = ambilHasilKuesioner();
+  var adaEeg1 = !!(hasil.eeg1 && hasil.eeg1.interval && hasil.eeg1.interval.length > 0);
+  var adaEeg2 = !!(hasil.eeg2 && hasil.eeg2.interval && hasil.eeg2.interval.length > 0);
+  var adaDataEeg = adaEeg1 || adaEeg2;
+
+  var ringkasBtn = document.getElementById('downloadCsvRingkasBtn');
+  var detailBtn = document.getElementById('downloadCsvDetailBtn');
+  var edfAllBtn = document.getElementById('downloadEdfAllBtn');
+  var pngEeg1Btn = document.getElementById('unduhPngEeg1Btn');
+  var edfEeg1Btn = document.getElementById('unduhEdfEeg1Btn');
+  var pngEeg2Btn = document.getElementById('unduhPngEeg2Btn');
+  var edfEeg2Btn = document.getElementById('unduhEdfEeg2Btn');
+  var csvKosongEl = document.getElementById('csvKosong');
+
+  if (ringkasBtn) ringkasBtn.disabled = !adaDataEeg;
+  if (detailBtn) detailBtn.disabled = !adaDataEeg;
+  if (edfAllBtn) edfAllBtn.disabled = !adaDataEeg;
+  if (pngEeg1Btn) pngEeg1Btn.disabled = !adaEeg1;
+  if (edfEeg1Btn) edfEeg1Btn.disabled = !adaEeg1;
+  if (pngEeg2Btn) pngEeg2Btn.disabled = !adaEeg2;
+  if (edfEeg2Btn) edfEeg2Btn.disabled = !adaEeg2;
+  if (csvKosongEl) csvKosongEl.hidden = adaDataEeg;
+}
 
 tampilkanRingkasanKuesioner();
 tampilkanHasilEeg();
 tampilkanRekomendasi();
 aturTombolUnduh();
 
-document.getElementById('downloadCsvBtn').addEventListener('click', unduhCsv);
+// Event listeners untuk semua tombol ekspor
+var ringkasBtn = document.getElementById('downloadCsvRingkasBtn');
+if (ringkasBtn) ringkasBtn.addEventListener('click', unduhCsvRingkasan);
 
+var detailBtn = document.getElementById('downloadCsvDetailBtn');
+if (detailBtn) detailBtn.addEventListener('click', unduhCsvDetail);
+
+var edfAllBtn = document.getElementById('downloadEdfAllBtn');
+if (edfAllBtn) edfAllBtn.addEventListener('click', unduhSemuaEdf);
+
+var pngEeg1Btn = document.getElementById('unduhPngEeg1Btn');
+if (pngEeg1Btn) pngEeg1Btn.addEventListener('click', function () { unduhGambarGrafik('eeg1'); });
+
+var edfEeg1Btn = document.getElementById('unduhEdfEeg1Btn');
+if (edfEeg1Btn) edfEeg1Btn.addEventListener('click', function () { unduhEdfSesi('eeg1'); });
+
+var pngEeg2Btn = document.getElementById('unduhPngEeg2Btn');
+if (pngEeg2Btn) pngEeg2Btn.addEventListener('click', function () { unduhGambarGrafik('eeg2'); });
+
+var edfEeg2Btn = document.getElementById('unduhEdfEeg2Btn');
+if (edfEeg2Btn) edfEeg2Btn.addEventListener('click', function () { unduhEdfSesi('eeg2'); });
 
 /* ===== Tombol "Mulai Sesi Baru" ===== */
+var mulaiLagiBtn = document.getElementById('mulaiLagiBtn');
+if (mulaiLagiBtn) {
+  mulaiLagiBtn.addEventListener('click', function () {
+    var yakin = confirm('Yakin mau mulai sesi baru? Semua hasil kuesioner & EEG saat ini akan dihapus.');
+    if (!yakin) return;
 
-// Hapus semua hasil tersimpan supaya peserta berikutnya mulai dari data
-// yang bersih, lalu kembali ke landing page.
-// Ini aksi yang tidak bisa dibatalkan (semua hasil hilang), jadi tanya
-// dulu lewat confirm() sebelum benar-benar menghapus.
-document.getElementById('mulaiLagiBtn').addEventListener('click', function () {
-  var yakin = confirm('Yakin mau mulai sesi baru? Semua hasil kuesioner & EEG saat ini akan dihapus.');
-  if (!yakin) return;
-
-  localStorage.removeItem(KUESIONER_STORAGE_KEY);
-  window.location.href = 'index.html';
-});
+    localStorage.removeItem(KUESIONER_STORAGE_KEY);
+    window.location.href = 'index.html';
+  });
+}

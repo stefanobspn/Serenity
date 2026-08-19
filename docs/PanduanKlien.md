@@ -235,20 +235,25 @@ Halaman akan otomatis pindah ke **Hasil Akhir**.
 
 ## 2.9 Simpan hasilnya
 
-Di halaman Hasil Akhir ada dua tombol unduhan:
+Di halaman Hasil Akhir tersedia opsi penyimpanan lengkap untuk berbagai kebutuhan:
 
-- **Unduh Hasil (CSV)** — ringkasan satu peserta
-- **Unduh Data Interval (CSV)** — data per potongan waktu, untuk analisis lebih
-  detail
+1. **🖼️ Unduh Grafik (PNG)** *(di bawah masing-masing grafik EEG 1 & 2)*:
+   - Mengunduh gambar "grafik rumput" EEG beresolusi tinggi dengan latar putih bersih.
+   - Siap langsung dikirim ke psikolog/ahli untuk dianalisis visual atau dilampirkan ke dokumen laporan.
+2. **📄 Unduh File (.EDF)** *(European Data Format)*:
+   - Format file standar medis internasional.
+   - Dapat dibuka langsung oleh psikolog di software analisis EEG profesional seperti **EDFbrowser** atau **EEGLAB**.
+3. **📊 Unduh Ringkasan Hasil (CSV)**:
+   - Format tabel ringkas **1 baris per peserta** yang berisi skor kuesioner, nilai rata-rata gelombang, rasio Theta/Beta, puncak Alpha, dan kesimpulan.
+   - Sangat mudah digabungkan/ditumpuk di Excel untuk seluruh 30–50 peserta penelitian.
+4. **📈 Unduh Detail Waktu (CSV)**:
+   - Tabel data per titik waktu (~10 data per detik) untuk analisis statistik grafik kontinu.
 
-**Unduh keduanya sebelum menutup halaman.** Datanya tersimpan di browser saja,
-dan akan hilang kalau menekan "Mulai Sesi Baru".
-
-Beri nama file yang jelas, misalnya `peserta-01-tahap1.csv`.
+> **PENTING:** Unduh file yang Anda butuhkan sebelum menutup halaman atau sebelum menekan "Mulai Sesi Baru", karena data di browser akan di-reset saat sesi baru dimulai.
 
 ## 2.10 Peserta berikutnya
 
-Ketuk **Mulai Sesi Baru** di halaman Hasil Akhir, lalu ulangi dari 2.1.
+Ketuk **Mulai Sesi Baru** di halaman Hasil Akhir, lalu ulangi dari langkah 2.1 untuk peserta berikutnya.
 
 ---
 
