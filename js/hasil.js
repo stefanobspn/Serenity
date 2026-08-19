@@ -64,8 +64,8 @@ function tampilkanRingkasanKuesioner() {
 // di halaman monitor tanpa perlu diingat-ingat.
 
 // Gambar satu grafik garis tren band power sepanjang satu sesi rekam (EEG 1
-// atau EEG 2), dari titik-titik data per-interval yang disimpan eeg.js
-// (lihat dataEeg.interval, tiap titik = rata-rata INTERVAL_DETIK detik).
+// atau EEG 2), dari titik-titik data per-sampel yang disimpan eeg.js
+// (lihat dataEeg.interval, tiap titik = data per ~0.1 detik).
 // Beda dengan grafik live di eeg.js: grafik di sini statis, semua datanya
 // sudah lengkap begitu halaman ini dibuka, jadi tidak perlu logic
 // tambah-titik/geser-titik seperti grafik live itu.
@@ -83,13 +83,21 @@ function gambarGrafikEeg(prefix, dataEeg) {
           borderColor: band.color,
           backgroundColor: band.color,
           borderWidth: 2,
-          pointRadius: 2,
+          pointRadius: 0,
+          pointHoverRadius: 3,
           tension: 0.25
         };
       })
     },
     options: {
-      scales: { y: { beginAtZero: true } },
+      scales: {
+        x: {
+          ticks: {
+            maxTicksLimit: 12
+          }
+        },
+        y: { beginAtZero: true }
+      },
       plugins: { legend: { position: 'top', labels: { boxWidth: 12 } } }
     }
   });
@@ -115,14 +123,28 @@ function hitungVerdictStres(eeg1, eeg2) {
   return { arah: arah, rasio1: rasio1, rasio2: rasio2 };
 }
 
+// Cari nilai tertinggi (puncak) dari satu band pada daftar titik interval.
+// Ditulis pakai loop biasa daripada Math.max.apply supaya aman untuk
+// daftar data panjang (ribuan sampel) tanpa risiko call-stack overflow.
+function cariNilaiPuncak(titikTitik, bandKey) {
+  if (!titikTitik || titikTitik.length === 0) return 0;
+  var puncak = titikTitik[0][bandKey];
+  for (var i = 1; i < titikTitik.length; i++) {
+    if (titikTitik[i][bandKey] > puncak) {
+      puncak = titikTitik[i][bandKey];
+    }
+  }
+  return puncak;
+}
+
 // Bandingkan PUNCAK power Alpha EEG 1 vs EEG 2 sebagai sinyal rasa lapar,
 // sesuai docs/RingkasanKarya.md ("berdasarkan puncak gelombang Alpha").
-// Dipakai nilai maksimum dari titik-titik data per-interval (dataEeg.interval,
+// Dipakai nilai maksimum dari titik-titik data per-sampel (dataEeg.interval,
 // lihat eeg.js), bukan rata-rata keseluruhan sesi — karena rata-rata bisa
 // meratakan/menyembunyikan puncak yang cuma muncul sesaat di tengah sesi.
 function hitungVerdictLapar(eeg1, eeg2) {
-  var alpha1 = Math.max.apply(null, eeg1.interval.map(function (titik) { return titik.alpha; }));
-  var alpha2 = Math.max.apply(null, eeg2.interval.map(function (titik) { return titik.alpha; }));
+  var alpha1 = cariNilaiPuncak(eeg1.interval, 'alpha');
+  var alpha2 = cariNilaiPuncak(eeg2.interval, 'alpha');
   var arah = alpha2 > alpha1 ? 'naik' : (alpha2 < alpha1 ? 'turun' : 'stabil');
   return { arah: arah, alpha1: alpha1, alpha2: alpha2 };
 }
@@ -321,9 +343,10 @@ function siapkanDataCsv() {
     dataEeg.interval.forEach(function (titik) {
       // concat() bikin larik BARU tiap baris — kolomPeserta-nya sendiri tidak
       // ikut berubah, jadi aman dipakai berulang untuk baris berikutnya.
+      var teksDetik = typeof titik.detik === 'number' ? titik.detik.toFixed(2) : titik.detik;
       barisBarisData.push(kolomPeserta.concat([
         sesi,
-        titik.detik,
+        teksDetik,
         titik.delta.toFixed(3),
         titik.theta.toFixed(3),
         titik.alpha.toFixed(3),

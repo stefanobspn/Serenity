@@ -225,11 +225,11 @@ aritmatika). Headset **tetap dipakai**, jangan dilepas.
 
 ## 2.8 Rekam EEG 2
 
-Ketuk **Mulai Rekam EEG 2**. Masa tenang 30 detik berlaku lagi di sini, dan itu
-justru pas: mulailah aktivitasnya lebih dulu, biarkan 30 detik itu lewat sambil
-peserta masuk ke ritme tugasnya, baru datanya dikumpulkan.
+Ketuk **Mulai Rekam EEG 2**. Di EEG 2, data **langsung terekam seketika tanpa masa
+tenang 30 detik** — ini disengaja agar respon fisiologis dan efek stres dari
+aktivitas yang baru saja dilakukan langsung tercatat sebelum efeknya mereda.
 
-Setelah durasinya sama dengan EEG 1 (misalnya 2 menit), ketuk **Stop Rekam**.
+Setelah durasinya cukup (misalnya 2 menit), ketuk **Stop Rekam**.
 
 Halaman akan otomatis pindah ke **Hasil Akhir**.
 

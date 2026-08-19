@@ -42,8 +42,7 @@
 
 
 // --- Konstanta ---
-var MAX_POINTS = 60; // jumlah titik riwayat yang ditampilkan di grafik
-var INTERVAL_DETIK = 10; // tiap berapa detik satu titik data interval disimpan (lihat "Sesi Rekam" di bawah)
+var MAX_POINTS = 60; // jumlah titik riwayat yang ditampilkan di grafik live
 
 /* Berapa detik pertama yang dibuang sebelum perekaman benar-benar dimulai.
 
@@ -78,6 +77,8 @@ var kualitasEl = document.getElementById('kualitas');
 var kualitasPeringatanEl = document.getElementById('kualitasPeringatan');
 var abaikanKualitasEl = document.getElementById('abaikanKualitas');
 var lewatiAwalEl = document.getElementById('lewatiAwal');
+var wadahLewatiAwalEl = document.getElementById('wadahLewatiAwal');
+var penjelasanLewatiAwalEl = document.getElementById('penjelasanLewatiAwal');
 
 
 /* ===== Tahap rekam: EEG 1 (baseline) lalu EEG 2 (setelah aktivitas) =====
@@ -100,10 +101,14 @@ function tampilkanTahapEeg() {
     rekamHeadingEl.textContent = 'Rekam Data — EEG 1 (Baseline)';
     rekamInstruksiEl.textContent = 'Pastikan data sudah mengalir dan band power sudah muncul di atas, baru tekan tombol ini. Tekan "Stop Rekam" kapan saja untuk menyelesaikan sesi ini.';
     recordBtn.textContent = 'Mulai Rekam';
+    if (wadahLewatiAwalEl) wadahLewatiAwalEl.hidden = false;
+    if (penjelasanLewatiAwalEl) penjelasanLewatiAwalEl.hidden = false;
   } else {
     rekamHeadingEl.textContent = 'Rekam Data — EEG 2 (Setelah Aktivitas)';
-    rekamInstruksiEl.textContent = 'EEG 1 sudah selesai direkam. Sekarang lakukan aktivitas yang diinstruksikan peneliti (misalnya tes memori/aritmatika), lalu tekan tombol ini untuk merekam EEG 2. Tekan "Stop Rekam" kapan saja untuk menyelesaikan sesi ini.';
+    rekamInstruksiEl.textContent = 'EEG 1 sudah selesai direkam. Sekarang lakukan aktivitas yang diinstruksikan peneliti (misalnya tes memori/aritmatika), lalu tekan tombol ini untuk merekam EEG 2. Data langsung dikumpulkan tanpa masa tenang agar efek aktivitas segera tercatat.';
     recordBtn.textContent = 'Mulai Rekam EEG 2';
+    if (wadahLewatiAwalEl) wadahLewatiAwalEl.hidden = true;
+    if (penjelasanLewatiAwalEl) penjelasanLewatiAwalEl.hidden = true;
   }
 }
 tampilkanTahapEeg();
@@ -297,52 +302,29 @@ abaikanKualitasEl.addEventListener('change', perbaruiPeringatanKualitas);
    lama rekaman terserah peserta/peneliti, cuma waktu yang sudah berjalan
    ditampilkan di layar (lihat mulaiRekam).
 
-   Selain rata-rata keseluruhan sesi itu, kita JUGA menyimpan rata-rata per
-   potongan waktu INTERVAL_DETIK detik (lihat array intervalHasil) — supaya
-   halaman Hasil Akhir bisa menunjukkan tren band power sepanjang sesi
-   (dipakai juga untuk cari puncak gelombang Alpha, bukan cuma rata-ratanya
-   — lihat docs/RingkasanKarya.md), bukan cuma satu angka datar. Dua
-   akumulator ini jalan berbarengan: satu untuk seluruh sesi (jumlahBandPower
-   / jumlahSampel), satu lagi untuk potongan waktu yang sedang berjalan
-   (jumlahBandPowerInterval / jumlahSampelInterval), yang di-reset tiap kali
-   genap INTERVAL_DETIK detik. */
+   Selain rata-rata keseluruhan sesi itu, kita JUGA mencatat titik-titik data
+   per sampel (setiap data band power masuk, ~10 kali per detik / ~0.1s, lihat
+   array intervalHasil) — supaya halaman Hasil Akhir bisa menunjukkan dinamika
+   tren band power secara detail sepanjang sesi (dipakai juga untuk cari
+   puncak gelombang Alpha — lihat docs/RingkasanKarya.md dan
+   docs/PenjelasanSamplingRateEEG.md) serta diekspor ke Excel/CSV. */
 
 var sedangMerekam = false;
 var waktuBerjalanDetik = 0;
-var timerRekam = null; // penampung id dari setInterval, supaya bisa dibatalkan
-var jumlahBandPower = {}; // total penjumlahan tiap band selama rekaman
+var waktuMulaiRekamMs = 0; // timestamp saat data aktif mulai dicatat (setelah masa tenang)
+var timerRekam = null; // penampung id dari setInterval, untuk update tampilan durasi
+var jumlahBandPower = {}; // total penjumlahan tiap band selama rekaman (untuk rata-rata sesi)
 var jumlahSampel = 0; // berapa kali data band power masuk selama rekaman
-var jumlahBandPowerInterval = {}; // total penjumlahan tiap band, direset tiap INTERVAL_DETIK detik
-var jumlahSampelInterval = 0; // jumlah sampel di potongan waktu yang sedang berjalan
-var intervalHasil = []; // daftar titik data { detik, delta, theta, alpha, beta, gamma } sepanjang sesi
+var intervalHasil = []; // daftar titik data { detik, delta, theta, alpha, beta, gamma } per sampel sepanjang sesi
 var sisaMasaTenang = 0; // sisa detik masa tenang; selama masih > 0, sampel yang masuk dibuang
-
-// Hitung rata-rata potongan waktu yang sedang berjalan, simpan sebagai satu
-// titik data di intervalHasil, lalu kosongkan akumulatornya supaya siap
-// menghitung potongan waktu berikutnya. Dipanggil tiap genap INTERVAL_DETIK
-// detik (lihat timerRekam di bawah), dan sekali lagi di selesaiRekam() untuk
-// menyimpan sisa potongan terakhir yang belum genap INTERVAL_DETIK detik.
-function flushIntervalBucket() {
-  if (jumlahSampelInterval === 0) return; // tidak ada data masuk di potongan ini, jangan simpan titik kosong
-
-  var titik = { detik: waktuBerjalanDetik };
-  BANDS.forEach(function (band) {
-    titik[band.key] = jumlahBandPowerInterval[band.key] / jumlahSampelInterval;
-    jumlahBandPowerInterval[band.key] = 0;
-  });
-  intervalHasil.push(titik);
-  jumlahSampelInterval = 0;
-}
 
 // Bersiap merekam: kosongkan akumulator, kunci tombol, mulai hitung waktu
 // berjalan (naik terus sampai peserta menekan "Stop Rekam").
 function mulaiRekam() {
   BANDS.forEach(function (band) {
     jumlahBandPower[band.key] = 0;
-    jumlahBandPowerInterval[band.key] = 0;
   });
   jumlahSampel = 0;
-  jumlahSampelInterval = 0;
   intervalHasil = [];
   // Catatan mutu sinyal dimulai dari nol tiap sesi.
   kualitasTerburuk = null;
@@ -354,28 +336,29 @@ function mulaiRekam() {
   stopRecordBtn.hidden = false; // munculkan tombol stop selama rekam berlangsung
 
   waktuBerjalanDetik = 0;
-  sisaMasaTenang = lewatiAwalEl.checked ? DETIK_TENANG : 0;
+  // Masa tenang 30 detik HANYA berlaku untuk EEG 1 (baseline) jika dicentang.
+  // Di EEG 2 (setelah aktivitas), data langsung terekam tanpa jeda masa tenang
+  // agar respon aktivitas/stres langsung tercatat sebelum efeknya mereda.
+  sisaMasaTenang = (tahapEeg === 1 && lewatiAwalEl && lewatiAwalEl.checked) ? DETIK_TENANG : 0;
+  waktuMulaiRekamMs = (sisaMasaTenang === 0) ? Date.now() : 0;
   perbaruiStatusRekam();
 
   timerRekam = setInterval(function () {
     /* Selama masa tenang, waktuBerjalanDetik sengaja TIDAK ikut naik. Jadi
        "detik ke-10" di file hasil selalu berarti sepuluh detik setelah
        pengumpulan data betul-betul dimulai, bukan sepuluh detik setelah
-       tombolnya ditekan. Tanpa ini, rekaman dengan masa tenang dan rekaman
-       tanpa masa tenang punya arti sumbu waktu yang berbeda, dan grafik
-       trennya jadi tidak bisa dibandingkan satu sama lain. */
+       tombolnya ditekan. */
     if (sisaMasaTenang > 0) {
       sisaMasaTenang--;
+      if (sisaMasaTenang === 0) {
+        waktuMulaiRekamMs = Date.now();
+      }
       perbaruiStatusRekam();
       return;
     }
 
     waktuBerjalanDetik++;
     perbaruiStatusRekam();
-
-    if (waktuBerjalanDetik % INTERVAL_DETIK === 0) {
-      flushIntervalBucket();
-    }
   }, 1000);
 }
 
@@ -407,38 +390,12 @@ function selesaiRekam() {
   stopRecordBtn.hidden = true;
 
   /* Distop sebelum masa tenang habis. Belum ada satu sampel pun yang
-     terkumpul, jadi ini diperlakukan sebagai BATAL, bukan sebagai sesi kosong.
-
-     Bedanya penting: kalau diteruskan, jumlahSampel masih 0 sehingga hasilEeg
-     bernilai null, dan null itu akan disimpan menimpa hasil sesi ini — untuk
-     EEG 2 artinya peserta langsung dilempar ke halaman Hasil Akhir dengan
-     data yang hilang. Salah pencet selama menunggu tidak boleh sampai
-     menghapus rekaman. */
+     terkumpul, jadi ini diperlakukan sebagai BATAL, bukan sebagai sesi kosong. */
   if (sisaMasaTenang > 0) {
     sisaMasaTenang = 0;
     recordStatusEl.textContent = 'Perekaman dibatalkan — masa tenang belum selesai, belum ada data yang terkumpul.';
     recordBtn.disabled = !bolehMulaiRekam();
     return;
-  }
-
-  /* Sisa potongan waktu terakhir yang belum genap INTERVAL_DETIK detik.
-
-     Dulu potongan sisa ini SELALU disimpan, dan itu bikin masalah nyata di
-     data rekaman pertama: sesi yang distop di detik 100 sekian menghasilkan
-     dua baris berlabel "detik 100" — satu dari potongan 90-100 yang utuh,
-     satu lagi dari sisa nol koma sekian detik sesudahnya. Baris sisa itu
-     cuma berisi segelintir sampel, jadi angkanya jauh lebih goyah daripada
-     tetangganya, dan sendirian dia menarik rata-rata baseline dari 3,105 ke
-     2,934. Di Excel dua baris itu terlihat seperti dua pengukuran pada detik
-     yang sama, tanpa ada yang menandakan bahwa yang satu jauh lebih pendek.
-
-     Jadi potongan sisa cuma disimpan kalau panjangnya minimal setengah
-     interval. Kecualinya: kalau sampai selesai belum ada satu titik pun
-     tersimpan (rekaman yang sangat pendek), potongan sisa tetap disimpan —
-     satu titik yang pendek masih lebih berguna daripada grafik kosong. */
-  var detikSisa = waktuBerjalanDetik % INTERVAL_DETIK;
-  if (detikSisa >= INTERVAL_DETIK / 2 || intervalHasil.length === 0) {
-    flushIntervalBucket();
   }
 
   var hasilEeg = null;
@@ -452,22 +409,17 @@ function selesaiRekam() {
       // rasio Theta/Beta secara presisi, tanpa harus parsing balik teks.
       hasilEeg[band.key] = { value: formatPower(rataRata), raw: rataRata };
     });
-    // Titik-titik data per INTERVAL_DETIK detik sepanjang sesi ini, dipakai
-    // halaman Hasil Akhir untuk grafik tren dan untuk cari puncak Alpha.
+    // Titik-titik data per sampel sepanjang sesi ini (~10 titik per detik),
+    // dipakai halaman Hasil Akhir untuk grafik tren dan untuk cari puncak Alpha.
     hasilEeg.interval = intervalHasil;
 
     /* Catatan mutu data: seburuk apa kontak elektroda pernah jadi selama sesi
        ini, dan apakah peneliti sengaja menembus kunci kualitas lewat centang
        "abaikan". Ini ikut disimpan supaya angka band power di atas tidak
-       pernah berdiri sendiri tanpa konteks — tanpa catatan ini, data yang
-       diambil dengan satu elektroda lepas kelihatan persis sama sahihnya
-       dengan data yang diambil dalam kondisi sempurna, dan tidak akan ada
-       yang bisa membedakannya waktu hasilnya dianalisis nanti. */
+       pernah berdiri sendiri tanpa konteks. */
     hasilEeg.kualitas = {
       terburuk: kualitasTerburuk,
       persenJelek: jumlahJelekPerElektroda.map(function (jumlah) {
-        // Kalau tidak ada satu pun data kualitas yang masuk, jangan bagi
-        // dengan nol — hasilnya NaN dan bikin file CSV-nya kotor.
         if (jumlahCekKualitas === 0) return null;
         return (jumlah / jumlahCekKualitas) * 100;
       }),
@@ -647,8 +599,8 @@ function tambahTitikGrafik(powers) {
   chart.update('none'); // 'none' = gambar ulang tanpa animasi transisi
 }
 
-// Kalau sedang dalam sesi rekam, tambahkan sampel ini ke akumulator
-// supaya nanti bisa dirata-ratakan di selesaiRekam()
+// Kalau sedang dalam sesi rekam, catat titik data sampel ini ke intervalHasil
+// dan tambahkan ke akumulator rata-rata sesi.
 function tambahSampelJikaSedangRekam(powers) {
   if (!sedangMerekam) return;
   // Masa tenang belum habis: data yang masuk tetap tampil di layar dan di
@@ -656,12 +608,22 @@ function tambahSampelJikaSedangRekam(powers) {
   // tapi sengaja tidak ikut dijumlahkan ke hasil.
   if (sisaMasaTenang > 0) return;
 
+  if (!waktuMulaiRekamMs) {
+    waktuMulaiRekamMs = Date.now();
+  }
+
   BANDS.forEach(function (band) {
     jumlahBandPower[band.key] += powers[band.key];
-    jumlahBandPowerInterval[band.key] += powers[band.key];
   });
   jumlahSampel++;
-  jumlahSampelInterval++;
+
+  // Hitung detik berjalan dengan presisi 2 desimal (contoh: 0.10, 0.20, ...)
+  var detikSekarang = parseFloat(((Date.now() - waktuMulaiRekamMs) / 1000).toFixed(2));
+  var titik = { detik: detikSekarang };
+  BANDS.forEach(function (band) {
+    titik[band.key] = powers[band.key];
+  });
+  intervalHasil.push(titik);
 }
 
 // Data band power baru datang (dikirim relay ~10 kali per detik).

@@ -18,7 +18,7 @@ Di ruang kelas digunakan *diffuser* atsiri sebagai aromaterapi (*green scent the
 ## Metode Penelitian
 
 ### 1. Tahap Satu
-* **Pengukuran EEG:** Mengukur gelombang otak manusia:
+* **Pengukuran EEG:** Mengukur gelombang otak manusia menggunakan headset Muse S Gen 2 (ADC sampling rate **256 Hz**, interval cuplikan mentah $\Delta t \approx 0.004\text{ detik}$, diekstraksi ke *Band Power* via FFT resmi LibMuse pada resolusi **10 Hz / interval 0.1 detik** — lihat detail di `docs/PenjelasanSamplingRateEEG.md`):
   * Alpha (8–13 Hz)[cite: 1]
   * Beta (14–26 Hz)[cite: 1]
   * Delta (0.5–4.0 Hz)[cite: 1]
