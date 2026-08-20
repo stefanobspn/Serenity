@@ -240,14 +240,11 @@ Di halaman Hasil Akhir tersedia opsi penyimpanan lengkap untuk berbagai kebutuha
 1. **🖼️ Unduh Grafik (PNG)** *(di bawah masing-masing grafik EEG 1 & 2)*:
    - Mengunduh gambar "grafik rumput" EEG beresolusi tinggi dengan latar putih bersih.
    - Siap langsung dikirim ke psikolog/ahli untuk dianalisis visual atau dilampirkan ke dokumen laporan.
-2. **📄 Unduh File (.EDF)** *(European Data Format)*:
-   - Format file standar medis internasional.
-   - Dapat dibuka langsung oleh psikolog di software analisis EEG profesional seperti **EDFbrowser** atau **EEGLAB**.
-3. **📊 Unduh Ringkasan Hasil (CSV)**:
+2. **📊 Unduh Ringkasan Hasil (CSV)**:
    - Format tabel ringkas **1 baris per peserta** yang berisi skor kuesioner, nilai rata-rata gelombang, rasio Theta/Beta, puncak Alpha, dan kesimpulan.
-   - Sangat mudah digabungkan/ditumpuk di Excel untuk seluruh 30–50 peserta penelitian.
-4. **📈 Unduh Detail Waktu (CSV)**:
-   - Tabel data per titik waktu (~10 data per detik) untuk analisis statistik grafik kontinu.
+   - Sangat mudah digabungkan/ditumpuk di Excel/SPSS untuk seluruh 30–50 peserta penelitian.
+3. **📈 Unduh Detail Waktu (CSV)**:
+   - Tabel data per titik waktu (~10 data per detik) untuk analisis statistik grafik kontinu di Python / R / Excel.
 
 > **PENTING:** Unduh file yang Anda butuhkan sebelum menutup halaman atau sebelum menekan "Mulai Sesi Baru", karena data di browser akan di-reset saat sesi baru dimulai.
 

@@ -417,7 +417,7 @@ function tampilkanRekomendasi() {
 }
 
 
-/* ===== Fitur Ekspor: Gambar Grafik (PNG), File Medis (.EDF), & CSV ===== */
+/* ===== Fitur Ekspor: Gambar Grafik (PNG) & CSV ===== */
 
 // Bungkus satu nilai supaya aman dipakai di dalam file CSV.
 function escapeNilaiCsv(nilai) {
@@ -641,36 +641,6 @@ function unduhGambarGrafik(prefix) {
   document.body.removeChild(link);
 }
 
-/* 4. Unduh File Standar Medis .EDF (European Data Format) */
-function unduhEdfSesi(prefix) {
-  const hasil = ambilHasilKuesioner();
-  const dataEeg = hasil[prefix];
-  if (!dataEeg || !dataEeg.interval || dataEeg.interval.length === 0) {
-    alert('Belum ada data rekaman untuk ' + prefix.toUpperCase());
-    return;
-  }
-  const namaPeserta = (hasil.peserta && hasil.peserta.nama) ? hasil.peserta.nama : 'peserta';
-  unduhEdf(namaPeserta, prefix.toUpperCase(), dataEeg.interval);
-}
-
-function unduhSemuaEdf() {
-  const hasil = ambilHasilKuesioner();
-  const adaEeg1 = !!(hasil.eeg1 && hasil.eeg1.interval && hasil.eeg1.interval.length > 0);
-  const adaEeg2 = !!(hasil.eeg2 && hasil.eeg2.interval && hasil.eeg2.interval.length > 0);
-
-  if (!adaEeg1 && !adaEeg2) {
-    alert('Belum ada data rekaman EEG.');
-    return;
-  }
-
-  if (adaEeg1) unduhEdfSesi('eeg1');
-  if (adaEeg2) {
-    setTimeout(function () {
-      unduhEdfSesi('eeg2');
-    }, 600);
-  }
-}
-
 // Atur tombol aksi (enable/disable jika belum ada data)
 function aturTombolUnduh() {
   const hasil = ambilHasilKuesioner();
@@ -680,20 +650,14 @@ function aturTombolUnduh() {
 
   const ringkasBtn = document.getElementById('downloadCsvRingkasBtn');
   const detailBtn = document.getElementById('downloadCsvDetailBtn');
-  const edfAllBtn = document.getElementById('downloadEdfAllBtn');
   const pngEeg1Btn = document.getElementById('unduhPngEeg1Btn');
-  const edfEeg1Btn = document.getElementById('unduhEdfEeg1Btn');
   const pngEeg2Btn = document.getElementById('unduhPngEeg2Btn');
-  const edfEeg2Btn = document.getElementById('unduhEdfEeg2Btn');
   const csvKosongEl = document.getElementById('csvKosong');
 
   if (ringkasBtn) ringkasBtn.disabled = !adaDataEeg;
   if (detailBtn) detailBtn.disabled = !adaDataEeg;
-  if (edfAllBtn) edfAllBtn.disabled = !adaDataEeg;
   if (pngEeg1Btn) pngEeg1Btn.disabled = !adaEeg1;
-  if (edfEeg1Btn) edfEeg1Btn.disabled = !adaEeg1;
   if (pngEeg2Btn) pngEeg2Btn.disabled = !adaEeg2;
-  if (edfEeg2Btn) edfEeg2Btn.disabled = !adaEeg2;
   if (csvKosongEl) csvKosongEl.hidden = adaDataEeg;
 }
 
@@ -709,20 +673,11 @@ if (ringkasBtn) ringkasBtn.addEventListener('click', unduhCsvRingkasan);
 const detailBtn = document.getElementById('downloadCsvDetailBtn');
 if (detailBtn) detailBtn.addEventListener('click', unduhCsvDetail);
 
-const edfAllBtn = document.getElementById('downloadEdfAllBtn');
-if (edfAllBtn) edfAllBtn.addEventListener('click', unduhSemuaEdf);
-
 const pngEeg1Btn = document.getElementById('unduhPngEeg1Btn');
 if (pngEeg1Btn) pngEeg1Btn.addEventListener('click', function () { unduhGambarGrafik('eeg1'); });
 
-const edfEeg1Btn = document.getElementById('unduhEdfEeg1Btn');
-if (edfEeg1Btn) edfEeg1Btn.addEventListener('click', function () { unduhEdfSesi('eeg1'); });
-
 const pngEeg2Btn = document.getElementById('unduhPngEeg2Btn');
 if (pngEeg2Btn) pngEeg2Btn.addEventListener('click', function () { unduhGambarGrafik('eeg2'); });
-
-const edfEeg2Btn = document.getElementById('unduhEdfEeg2Btn');
-if (edfEeg2Btn) edfEeg2Btn.addEventListener('click', function () { unduhEdfSesi('eeg2'); });
 
 /* ===== Tombol "Mulai Sesi Baru" ===== */
 const mulaiLagiBtn = document.getElementById('mulaiLagiBtn');
