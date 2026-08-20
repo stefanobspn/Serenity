@@ -281,7 +281,7 @@ function perbaruiPeringatanKualitas() {
 
   kualitasPeringatanEl.hidden = !bermasalah;
   recordBtn.disabled = !bolehMulaiRekam();
-}
+
 
   kualitasPeringatanEl.hidden = !bermasalah;
   recordBtn.disabled = !bolehMulaiRekam();
