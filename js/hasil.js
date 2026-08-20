@@ -12,10 +12,10 @@
 // Tampilkan hasil PSS-5, SEES-10, dan Hunger Scale yang tersimpan di
 // localStorage dari halaman-halaman kuesioner.
 function tampilkanRingkasanKuesioner() {
-  var hasil = ambilHasilKuesioner();
-  var wadahEl = document.getElementById('ringkasan-kuesioner');
+  const hasil = ambilHasilKuesioner();
+  const wadahEl = document.getElementById('ringkasan-kuesioner');
 
-  var belumAdaData = !hasil.pss5 && !hasil.sees10 && !hasil.hunger;
+  const belumAdaData = !hasil.pss5 && !hasil.sees10 && !hasil.hunger;
   if (belumAdaData) {
     wadahEl.textContent = 'Belum ada data kuesioner (halaman ini dibuka langsung tanpa mengisi kuesioner).';
     return;
@@ -24,7 +24,7 @@ function tampilkanRingkasanKuesioner() {
   wadahEl.innerHTML = ''; // kosongkan dulu tulisan "Memuat..."
 
   if (hasil.peserta && hasil.peserta.nama) {
-    var namaEl = document.createElement('div');
+    const namaEl = document.createElement('div');
     namaEl.className = 'catatan';
     namaEl.style.fontSize = '14px';
     namaEl.style.fontWeight = '600';
@@ -33,14 +33,14 @@ function tampilkanRingkasanKuesioner() {
     wadahEl.appendChild(namaEl);
   }
 
-  var cardsGrid = document.createElement('div');
+  const cardsGrid = document.createElement('div');
   cardsGrid.className = 'summary-cards-grid';
 
   if (hasil.pss5) {
-    var cardPss5 = document.createElement('div');
+    const cardPss5 = document.createElement('div');
     cardPss5.className = 'summary-card';
-    var isStresTinggi = hasil.pss5.status === 'TINGGI';
-    var badgeClass = isStresTinggi ? 'summary-badge-high' : 'summary-badge-low';
+    const isStresTinggi = hasil.pss5.status === 'TINGGI';
+    const badgeClass = isStresTinggi ? 'summary-badge-high' : 'summary-badge-low';
     cardPss5.innerHTML = 
       '<div class="summary-card-title">Tingkat Stres (PSS-5)</div>' +
       '<div class="summary-card-value">Skor ' + hasil.pss5.skor + ' <small style="font-size: 13px; font-weight: normal; color: var(--color-text-muted);">/ 30</small></div>' +
@@ -49,11 +49,11 @@ function tampilkanRingkasanKuesioner() {
   }
 
   if (hasil.sees10) {
-    var cardSees = document.createElement('div');
+    const cardSees = document.createElement('div');
     cardSees.className = 'summary-card';
-    var isOver = hasil.sees10.status.indexOf('OVER') !== -1;
-    var isUnder = hasil.sees10.status.indexOf('UNDER') !== -1;
-    var badgeSees = isOver ? 'summary-badge-high' : (isUnder ? 'summary-badge-mid' : 'summary-badge-low');
+    const isOver = hasil.sees10.status.indexOf('OVER') !== -1;
+    const isUnder = hasil.sees10.status.indexOf('UNDER') !== -1;
+    const badgeSees = isOver ? 'summary-badge-high' : (isUnder ? 'summary-badge-mid' : 'summary-badge-low');
     cardSees.innerHTML = 
       '<div class="summary-card-title">Emotional Eating (SEES-10)</div>' +
       '<div class="summary-card-value">Rata-rata ' + hasil.sees10.rataRata.toFixed(2) + ' <small style="font-size: 13px; font-weight: normal; color: var(--color-text-muted);">/ 5.0</small></div>' +
@@ -62,9 +62,9 @@ function tampilkanRingkasanKuesioner() {
   }
 
   if (hasil.hunger) {
-    var cardHunger = document.createElement('div');
+    const cardHunger = document.createElement('div');
     cardHunger.className = 'summary-card';
-    var labelHunger = hasil.hunger.skor <= 3 ? 'Sangat Lapar' : (hasil.hunger.skor <= 6 ? 'Netral / Cukup' : 'Kenyang');
+    const labelHunger = hasil.hunger.skor <= 3 ? 'Sangat Lapar' : (hasil.hunger.skor <= 6 ? 'Netral / Cukup' : 'Kenyang');
     cardHunger.innerHTML = 
       '<div class="summary-card-title">Skala Rasa Lapar</div>' +
       '<div class="summary-card-value">Skor ' + hasil.hunger.skor + ' <small style="font-size: 13px; font-weight: normal; color: var(--color-text-muted);">/ 10</small></div>' +
@@ -90,11 +90,11 @@ function tampilkanRingkasanKuesioner() {
 // Memakai 5 sumbu Y bertingkat (stack: 'eeg_stack') agar Delta, Theta, Alpha, Beta,
 // dan Gamma masing-masing memiliki jalurnya sendiri dan tidak saling tumpang tindih.
 function gambarGrafikEeg(prefix, dataEeg) {
-  var titikTitik = dataEeg.interval;
-  var canvas = document.getElementById('eegChart-' + prefix);
+  const titikTitik = dataEeg.interval;
+  const canvas = document.getElementById('eegChart-' + prefix);
   if (!canvas) return;
 
-  var scalesConfig = {
+  const scalesConfig = {
     x: {
       title: { display: true, text: 'Waktu (detik)', font: { size: 12 } },
       ticks: { maxTicksLimit: 15 }
@@ -102,7 +102,7 @@ function gambarGrafikEeg(prefix, dataEeg) {
   };
 
   BANDS.forEach(function (band) {
-    var axisId = 'y_' + band.key;
+    const axisId = 'y_' + band.key;
     scalesConfig[axisId] = {
       type: 'linear',
       stack: 'eeg_stack',
@@ -169,9 +169,9 @@ function isiKartuBand(prefix, dataEeg) {
 // mentah dari eeg.js), bukan .value (teks siap tampil), supaya hitungannya
 // presisi.
 function hitungVerdictStres(eeg1, eeg2) {
-  var rasio1 = eeg1.theta.raw / eeg1.beta.raw;
-  var rasio2 = eeg2.theta.raw / eeg2.beta.raw;
-  var arah = rasio2 < rasio1 ? 'naik' : (rasio2 > rasio1 ? 'turun' : 'stabil');
+  const rasio1 = eeg1.theta.raw / eeg1.beta.raw;
+  const rasio2 = eeg2.theta.raw / eeg2.beta.raw;
+  const arah = rasio2 < rasio1 ? 'naik' : (rasio2 > rasio1 ? 'turun' : 'stabil');
   return { arah: arah, rasio1: rasio1, rasio2: rasio2 };
 }
 
@@ -180,8 +180,8 @@ function hitungVerdictStres(eeg1, eeg2) {
 // daftar data panjang (ribuan sampel) tanpa risiko call-stack overflow.
 function cariNilaiPuncak(titikTitik, bandKey) {
   if (!titikTitik || titikTitik.length === 0) return 0;
-  var puncak = titikTitik[0][bandKey];
-  for (var i = 1; i < titikTitik.length; i++) {
+  let puncak = titikTitik[0][bandKey];
+  for (let i = 1; i < titikTitik.length; i++) {
     if (titikTitik[i][bandKey] > puncak) {
       puncak = titikTitik[i][bandKey];
     }
@@ -195,9 +195,9 @@ function cariNilaiPuncak(titikTitik, bandKey) {
 // lihat eeg.js), bukan rata-rata keseluruhan sesi — karena rata-rata bisa
 // meratakan/menyembunyikan puncak yang cuma muncul sesaat di tengah sesi.
 function hitungVerdictLapar(eeg1, eeg2) {
-  var alpha1 = cariNilaiPuncak(eeg1.interval, 'alpha');
-  var alpha2 = cariNilaiPuncak(eeg2.interval, 'alpha');
-  var arah = alpha2 > alpha1 ? 'naik' : (alpha2 < alpha1 ? 'turun' : 'stabil');
+  const alpha1 = cariNilaiPuncak(eeg1.interval, 'alpha');
+  const alpha2 = cariNilaiPuncak(eeg2.interval, 'alpha');
+  const arah = alpha2 > alpha1 ? 'naik' : (alpha2 < alpha1 ? 'turun' : 'stabil');
   return { arah: arah, alpha1: alpha1, alpha2: alpha2 };
 }
 
@@ -208,15 +208,15 @@ function teksVerdictStres(v) {
 }
 
 function teksVerdictLapar(v) {
-  if (v.arah === 'naik') return 'Puncak gelombang Alpha meningkat setelah aktivitas — bisa jadi tanda rasa lapar berkurang.';
-  if (v.arah === 'turun') return 'Puncak gelombang Alpha menurun setelah aktivitas — bisa jadi tanda rasa lapar bertambah.';
+  if (v.arah === 'naik') return 'Puncak gelombang Alpha meningkat setelah aktivitas. Bisa jadi tanda rasa lapar berkurang.';
+  if (v.arah === 'turun') return 'Puncak gelombang Alpha menurun setelah aktivitas. Bisa jadi tanda rasa lapar bertambah.';
   return 'Puncak gelombang Alpha relatif stabil setelah aktivitas.';
 }
 
 function tampilkanHasilEeg() {
-  var hasil = ambilHasilKuesioner();
-  var kosongEl = document.getElementById('eegKosong');
-  var perbandinganEl = document.getElementById('eegPerbandingan');
+  const hasil = ambilHasilKuesioner();
+  const kosongEl = document.getElementById('eegKosong');
+  const perbandinganEl = document.getElementById('eegPerbandingan');
 
   if (!hasil.eeg1 || !hasil.eeg2) {
     kosongEl.hidden = false;
@@ -247,30 +247,30 @@ function tampilkanHasilEeg() {
      2. Emotional eating tinggi / overeating (rata-rata SEES-10 > 3)
      3. Terjadi peningkatan stres dari data EEG (rasio Theta/Beta menurun)
      4. Penurunan nafsu makan / emotional under-eating (rata-rata SEES-10 < 3)
-   - Rekomendasi B diberikan jika:
+     - Rekomendasi B diberikan jika:
      Kondisi stres rendah (skor PSS-5 < 15), emotional eating moderate/stabil
      (rata-rata SEES-10 < 4), tidak ada peningkatan stres, dan tidak ada
      perubahan nafsu makan berlebih. */
 
 function evaluasiRekomendasi(hasil, verdictStresData) {
-  var pemicu = [];
+  const pemicu = [];
 
-  var stresTinggi = hasil.pss5 && hasil.pss5.skor > 14;
+  const stresTinggi = hasil.pss5 && hasil.pss5.skor > 14;
   if (stresTinggi) {
     pemicu.push('Tingkat stres kuesioner tinggi (skor PSS-5: ' + hasil.pss5.skor + '/30)');
   }
 
-  var overEating = hasil.sees10 && hasil.sees10.rataRata > 3;
+  const overEating = hasil.sees10 && hasil.sees10.rataRata > 3;
   if (overEating) {
     pemicu.push('Kecenderungan makan berlebih saat stres / overeating (rata-rata SEES-10: ' + hasil.sees10.rataRata.toFixed(2) + ')');
   }
 
-  var underEating = hasil.sees10 && hasil.sees10.rataRata < 3;
+  const underEating = hasil.sees10 && hasil.sees10.rataRata < 3;
   if (underEating) {
     pemicu.push('Kecenderungan penurunan nafsu makan saat stres / under-eating (rata-rata SEES-10: ' + hasil.sees10.rataRata.toFixed(2) + ')');
   }
 
-  var stresEegNaik = !!verdictStresData && verdictStresData.arah === 'naik';
+  const stresEegNaik = !!verdictStresData && verdictStresData.arah === 'naik';
   if (stresEegNaik) {
     pemicu.push('Peningkatan stres terdeteksi pada EEG (rasio Theta/Beta menurun)');
   }
@@ -284,7 +284,7 @@ function evaluasiRekomendasi(hasil, verdictStresData) {
   }
 
   // Jika kondisi stabil / rendah
-  var alasanB = [];
+  const alasanB = [];
   if (hasil.pss5) {
     alasanB.push('Tingkat stres kuesioner rendah (skor PSS-5: ' + hasil.pss5.skor + '/30)');
   }
@@ -305,7 +305,7 @@ function evaluasiRekomendasi(hasil, verdictStresData) {
 }
 
 function buatHtmlRekomendasiA(alasanList) {
-  var teksAlasan = alasanList.join(', ');
+  const teksAlasan = alasanList.join(', ');
   return '' +
     '<div class="rekomendasi-card rekomendasi-card-a">' +
       '<div class="rekomendasi-header">' +
@@ -351,7 +351,7 @@ function buatHtmlRekomendasiA(alasanList) {
 }
 
 function buatHtmlRekomendasiB(alasanList) {
-  var teksAlasan = alasanList.join(', ');
+  const teksAlasan = alasanList.join(', ');
   return '' +
     '<div class="rekomendasi-card rekomendasi-card-b">' +
       '<div class="rekomendasi-header">' +
@@ -397,17 +397,17 @@ function buatHtmlRekomendasiB(alasanList) {
 }
 
 function tampilkanRekomendasi() {
-  var hasil = ambilHasilKuesioner();
-  var wadahEl = document.getElementById('rekomendasi');
+  const hasil = ambilHasilKuesioner();
+  const wadahEl = document.getElementById('rekomendasi');
 
-  var belumAdaKuesioner = !hasil.pss5 && !hasil.sees10 && !hasil.hunger;
+  const belumAdaKuesioner = !hasil.pss5 && !hasil.sees10 && !hasil.hunger;
   if (belumAdaKuesioner) {
     wadahEl.textContent = 'Belum ada data kuesioner untuk dibuatkan rekomendasi.';
     return;
   }
 
-  var verdictStresData = (hasil.eeg1 && hasil.eeg2) ? hitungVerdictStres(hasil.eeg1, hasil.eeg2) : null;
-  var evaluasi = evaluasiRekomendasi(hasil, verdictStresData);
+  const verdictStresData = (hasil.eeg1 && hasil.eeg2) ? hitungVerdictStres(hasil.eeg1, hasil.eeg2) : null;
+  const evaluasi = evaluasiRekomendasi(hasil, verdictStresData);
 
   if (evaluasi.tipe === 'A') {
     wadahEl.innerHTML = buatHtmlRekomendasiA(evaluasi.alasan);
@@ -421,8 +421,8 @@ function tampilkanRekomendasi() {
 
 // Bungkus satu nilai supaya aman dipakai di dalam file CSV.
 function escapeNilaiCsv(nilai) {
-  var teks = String(nilai === null || nilai === undefined ? '' : nilai);
-  var perluDibungkus = teks.indexOf(',') !== -1 || teks.indexOf('"') !== -1 || teks.indexOf('\n') !== -1;
+  const teks = String(nilai === null || nilai === undefined ? '' : nilai);
+  const perluDibungkus = teks.indexOf(',') !== -1 || teks.indexOf('"') !== -1 || teks.indexOf('\n') !== -1;
   if (!perluDibungkus) return teks;
   return '"' + teks.replace(/"/g, '""') + '"';
 }
@@ -433,10 +433,10 @@ function escapeNilaiCsv(nilai) {
    Format ini membuat data 30-50 peserta penelitian bisa langsung ditumpuk
    ke bawah menjadi satu tabel spreadsheet master tanpa ribuan baris berserakan. */
 function buatCsvRingkasan() {
-  var hasil = ambilHasilKuesioner();
-  var waktuUnduh = new Date().toLocaleString('id-ID');
+  const hasil = ambilHasilKuesioner();
+  const waktuUnduh = new Date().toLocaleString('id-ID');
 
-  var header = [
+  const header = [
     'waktu_unduh',
     'nama_peserta',
     'pss5_skor',
@@ -465,23 +465,23 @@ function buatCsvRingkasan() {
     'eeg2_mutu_diabaikan'
   ];
 
-  var eeg1 = hasil.eeg1;
-  var eeg2 = hasil.eeg2;
+  const eeg1 = hasil.eeg1;
+  const eeg2 = hasil.eeg2;
 
-  var eeg1Rasio = (eeg1 && eeg1.theta && eeg1.beta && eeg1.beta.raw) ? (eeg1.theta.raw / eeg1.beta.raw).toFixed(2) : '';
-  var eeg2Rasio = (eeg2 && eeg2.theta && eeg2.beta && eeg2.beta.raw) ? (eeg2.theta.raw / eeg2.beta.raw).toFixed(2) : '';
-  var eeg1PuncakAlpha = (eeg1 && eeg1.interval) ? cariNilaiPuncak(eeg1.interval, 'alpha').toFixed(3) : '';
-  var eeg2PuncakAlpha = (eeg2 && eeg2.interval) ? cariNilaiPuncak(eeg2.interval, 'alpha').toFixed(3) : '';
+  const eeg1Rasio = (eeg1 && eeg1.theta && eeg1.beta && eeg1.beta.raw) ? (eeg1.theta.raw / eeg1.beta.raw).toFixed(2) : '';
+  const eeg2Rasio = (eeg2 && eeg2.theta && eeg2.beta && eeg2.beta.raw) ? (eeg2.theta.raw / eeg2.beta.raw).toFixed(2) : '';
+  const eeg1PuncakAlpha = (eeg1 && eeg1.interval) ? cariNilaiPuncak(eeg1.interval, 'alpha').toFixed(3) : '';
+  const eeg2PuncakAlpha = (eeg2 && eeg2.interval) ? cariNilaiPuncak(eeg2.interval, 'alpha').toFixed(3) : '';
 
-  var verdictStresData = (eeg1 && eeg2) ? hitungVerdictStres(eeg1, eeg2) : null;
-  var verdictStres = verdictStresData ? teksVerdictStres(verdictStresData) : '';
-  var verdictLapar = (eeg1 && eeg2) ? teksVerdictLapar(hitungVerdictLapar(eeg1, eeg2)) : '';
+  const verdictStresData = (eeg1 && eeg2) ? hitungVerdictStres(eeg1, eeg2) : null;
+  const verdictStres = verdictStresData ? teksVerdictStres(verdictStresData) : '';
+  const verdictLapar = (eeg1 && eeg2) ? teksVerdictLapar(hitungVerdictLapar(eeg1, eeg2)) : '';
 
-  var adaKuesioner = !!(hasil.pss5 || hasil.sees10 || hasil.hunger);
-  var hasilRekom = adaKuesioner ? evaluasiRekomendasi(hasil, verdictStresData) : null;
-  var teksRekomendasi = hasilRekom ? ('Rekomendasi ' + hasilRekom.tipe) : '';
+  const adaKuesioner = !!(hasil.pss5 || hasil.sees10 || hasil.hunger);
+  const hasilRekom = adaKuesioner ? evaluasiRekomendasi(hasil, verdictStresData) : null;
+  const teksRekomendasi = hasilRekom ? ('Rekomendasi ' + hasilRekom.tipe) : '';
 
-  var baris = [
+  const baris = [
     waktuUnduh,
     hasil.peserta ? hasil.peserta.nama : '',
     hasil.pss5 ? hasil.pss5.skor : '',
@@ -516,12 +516,12 @@ function buatCsvRingkasan() {
 }
 
 function unduhCsvRingkasan() {
-  var teksCsv = '﻿' + buatCsvRingkasan();
-  var blob = new Blob([teksCsv], { type: 'text/csv;charset=utf-8' });
-  var urlSementara = URL.createObjectURL(blob);
-  var link = document.createElement('a');
-  var hasil = ambilHasilKuesioner();
-  var namaBersih = (hasil.peserta && hasil.peserta.nama) ? hasil.peserta.nama.replace(/\s+/g, '_') : 'peserta';
+  const teksCsv = '﻿' + buatCsvRingkasan();
+  const blob = new Blob([teksCsv], { type: 'text/csv;charset=utf-8' });
+  const urlSementara = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const hasil = ambilHasilKuesioner();
+  const namaBersih = (hasil.peserta && hasil.peserta.nama) ? hasil.peserta.nama.replace(/\s+/g, '_') : 'peserta';
   link.href = urlSementara;
   link.download = 'ringkasan_hasil_' + namaBersih + '.csv';
   document.body.appendChild(link);
@@ -532,10 +532,10 @@ function unduhCsvRingkasan() {
 
 /* 2. CSV Detail Titik Waktu: Format panjang time-series (~10 baris per detik) */
 function siapkanDataCsvDetail() {
-  var hasil = ambilHasilKuesioner();
-  var waktuUnduh = new Date().toLocaleString('id-ID');
+  const hasil = ambilHasilKuesioner();
+  const waktuUnduh = new Date().toLocaleString('id-ID');
 
-  var kolomPeserta = [
+  const kolomPeserta = [
     waktuUnduh,
     hasil.peserta ? hasil.peserta.nama : '',
     hasil.pss5 ? hasil.pss5.skor : '',
@@ -545,18 +545,18 @@ function siapkanDataCsvDetail() {
     hasil.hunger ? hasil.hunger.skor : ''
   ];
 
-  var barisBarisData = [];
+  const barisBarisData = [];
 
   ['eeg1', 'eeg2'].forEach(function (sesi) {
-    var dataEeg = hasil[sesi];
+    const dataEeg = hasil[sesi];
     if (!dataEeg || !dataEeg.interval) return;
 
-    var mutu = dataEeg.kualitas;
-    var kosong = ['', '', '', ''];
-    var nilaiTerburuk = (mutu && mutu.terburuk) ? mutu.terburuk : kosong;
-    var persenJelek = (mutu && mutu.persenJelek) ? mutu.persenJelek : kosong;
+    const mutu = dataEeg.kualitas;
+    const kosong = ['', '', '', ''];
+    const nilaiTerburuk = (mutu && mutu.terburuk) ? mutu.terburuk : kosong;
+    const persenJelek = (mutu && mutu.persenJelek) ? mutu.persenJelek : kosong;
 
-    var kolomMutu = nilaiTerburuk.slice(0, 4).concat(
+    const kolomMutu = nilaiTerburuk.slice(0, 4).concat(
       persenJelek.slice(0, 4).map(function (persen) {
         return (persen === '' || persen === null) ? '' : persen.toFixed(1);
       })
@@ -565,7 +565,7 @@ function siapkanDataCsvDetail() {
     ]);
 
     dataEeg.interval.forEach(function (titik) {
-      var teksDetik = typeof titik.detik === 'number' ? titik.detik.toFixed(2) : titik.detik;
+      const teksDetik = typeof titik.detik === 'number' ? titik.detik.toFixed(2) : titik.detik;
       barisBarisData.push(kolomPeserta.concat([
         sesi,
         teksDetik,
@@ -582,7 +582,7 @@ function siapkanDataCsvDetail() {
 }
 
 function buatTeksCsvDetail() {
-  var header = [
+  const header = [
     'waktu_unduh', 'nama_peserta',
     'pss5_skor', 'pss5_status',
     'sees10_rata_rata', 'sees10_status',
@@ -595,7 +595,7 @@ function buatTeksCsvDetail() {
     'persen_jelek_af8', 'persen_jelek_tp10',
     'kualitas_diabaikan'
   ];
-  var semuaBaris = [header].concat(siapkanDataCsvDetail());
+  const semuaBaris = [header].concat(siapkanDataCsvDetail());
 
   return semuaBaris.map(function (baris) {
     return baris.map(escapeNilaiCsv).join(',');
@@ -603,12 +603,12 @@ function buatTeksCsvDetail() {
 }
 
 function unduhCsvDetail() {
-  var teksCsv = '﻿' + buatTeksCsvDetail();
-  var blob = new Blob([teksCsv], { type: 'text/csv;charset=utf-8' });
-  var urlSementara = URL.createObjectURL(blob);
-  var link = document.createElement('a');
-  var hasil = ambilHasilKuesioner();
-  var namaBersih = (hasil.peserta && hasil.peserta.nama) ? hasil.peserta.nama.replace(/\s+/g, '_') : 'peserta';
+  const teksCsv = '﻿' + buatTeksCsvDetail();
+  const blob = new Blob([teksCsv], { type: 'text/csv;charset=utf-8' });
+  const urlSementara = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const hasil = ambilHasilKuesioner();
+  const namaBersih = (hasil.peserta && hasil.peserta.nama) ? hasil.peserta.nama.replace(/\s+/g, '_') : 'peserta';
   link.href = urlSementara;
   link.download = 'detail_titik_waktu_' + namaBersih + '.csv';
   document.body.appendChild(link);
@@ -619,21 +619,21 @@ function unduhCsvDetail() {
 
 /* 3. Unduh Gambar Grafik Rumput (PNG dengan latar belakang putih bersih) */
 function unduhGambarGrafik(prefix) {
-  var hasil = ambilHasilKuesioner();
-  var namaBersih = (hasil.peserta && hasil.peserta.nama) ? hasil.peserta.nama.replace(/\s+/g, '_') : 'peserta';
-  var canvas = document.getElementById('eegChart-' + prefix);
+  const hasil = ambilHasilKuesioner();
+  const namaBersih = (hasil.peserta && hasil.peserta.nama) ? hasil.peserta.nama.replace(/\s+/g, '_') : 'peserta';
+  const canvas = document.getElementById('eegChart-' + prefix);
   if (!canvas) return;
 
   // Bikin canvas sementara dengan background putih agar tidak transparan waktu dibuka
-  var tempCanvas = document.createElement('canvas');
+  const tempCanvas = document.createElement('canvas');
   tempCanvas.width = canvas.width;
   tempCanvas.height = canvas.height;
-  var tempCtx = tempCanvas.getContext('2d');
+  const tempCtx = tempCanvas.getContext('2d');
   tempCtx.fillStyle = '#ffffff';
   tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
   tempCtx.drawImage(canvas, 0, 0);
 
-  var link = document.createElement('a');
+  const link = document.createElement('a');
   link.download = 'grafik_rumput_' + prefix + '_' + namaBersih + '.png';
   link.href = tempCanvas.toDataURL('image/png');
   document.body.appendChild(link);
@@ -643,20 +643,20 @@ function unduhGambarGrafik(prefix) {
 
 /* 4. Unduh File Standar Medis .EDF (European Data Format) */
 function unduhEdfSesi(prefix) {
-  var hasil = ambilHasilKuesioner();
-  var dataEeg = hasil[prefix];
+  const hasil = ambilHasilKuesioner();
+  const dataEeg = hasil[prefix];
   if (!dataEeg || !dataEeg.interval || dataEeg.interval.length === 0) {
     alert('Belum ada data rekaman untuk ' + prefix.toUpperCase());
     return;
   }
-  var namaPeserta = (hasil.peserta && hasil.peserta.nama) ? hasil.peserta.nama : 'peserta';
+  const namaPeserta = (hasil.peserta && hasil.peserta.nama) ? hasil.peserta.nama : 'peserta';
   unduhEdf(namaPeserta, prefix.toUpperCase(), dataEeg.interval);
 }
 
 function unduhSemuaEdf() {
-  var hasil = ambilHasilKuesioner();
-  var adaEeg1 = !!(hasil.eeg1 && hasil.eeg1.interval && hasil.eeg1.interval.length > 0);
-  var adaEeg2 = !!(hasil.eeg2 && hasil.eeg2.interval && hasil.eeg2.interval.length > 0);
+  const hasil = ambilHasilKuesioner();
+  const adaEeg1 = !!(hasil.eeg1 && hasil.eeg1.interval && hasil.eeg1.interval.length > 0);
+  const adaEeg2 = !!(hasil.eeg2 && hasil.eeg2.interval && hasil.eeg2.interval.length > 0);
 
   if (!adaEeg1 && !adaEeg2) {
     alert('Belum ada data rekaman EEG.');
@@ -673,19 +673,19 @@ function unduhSemuaEdf() {
 
 // Atur tombol aksi (enable/disable jika belum ada data)
 function aturTombolUnduh() {
-  var hasil = ambilHasilKuesioner();
-  var adaEeg1 = !!(hasil.eeg1 && hasil.eeg1.interval && hasil.eeg1.interval.length > 0);
-  var adaEeg2 = !!(hasil.eeg2 && hasil.eeg2.interval && hasil.eeg2.interval.length > 0);
-  var adaDataEeg = adaEeg1 || adaEeg2;
+  const hasil = ambilHasilKuesioner();
+  const adaEeg1 = !!(hasil.eeg1 && hasil.eeg1.interval && hasil.eeg1.interval.length > 0);
+  const adaEeg2 = !!(hasil.eeg2 && hasil.eeg2.interval && hasil.eeg2.interval.length > 0);
+  const adaDataEeg = adaEeg1 || adaEeg2;
 
-  var ringkasBtn = document.getElementById('downloadCsvRingkasBtn');
-  var detailBtn = document.getElementById('downloadCsvDetailBtn');
-  var edfAllBtn = document.getElementById('downloadEdfAllBtn');
-  var pngEeg1Btn = document.getElementById('unduhPngEeg1Btn');
-  var edfEeg1Btn = document.getElementById('unduhEdfEeg1Btn');
-  var pngEeg2Btn = document.getElementById('unduhPngEeg2Btn');
-  var edfEeg2Btn = document.getElementById('unduhEdfEeg2Btn');
-  var csvKosongEl = document.getElementById('csvKosong');
+  const ringkasBtn = document.getElementById('downloadCsvRingkasBtn');
+  const detailBtn = document.getElementById('downloadCsvDetailBtn');
+  const edfAllBtn = document.getElementById('downloadEdfAllBtn');
+  const pngEeg1Btn = document.getElementById('unduhPngEeg1Btn');
+  const edfEeg1Btn = document.getElementById('unduhEdfEeg1Btn');
+  const pngEeg2Btn = document.getElementById('unduhPngEeg2Btn');
+  const edfEeg2Btn = document.getElementById('unduhEdfEeg2Btn');
+  const csvKosongEl = document.getElementById('csvKosong');
 
   if (ringkasBtn) ringkasBtn.disabled = !adaDataEeg;
   if (detailBtn) detailBtn.disabled = !adaDataEeg;
@@ -703,35 +703,35 @@ tampilkanRekomendasi();
 aturTombolUnduh();
 
 // Event listeners untuk semua tombol ekspor
-var ringkasBtn = document.getElementById('downloadCsvRingkasBtn');
+const ringkasBtn = document.getElementById('downloadCsvRingkasBtn');
 if (ringkasBtn) ringkasBtn.addEventListener('click', unduhCsvRingkasan);
 
-var detailBtn = document.getElementById('downloadCsvDetailBtn');
+const detailBtn = document.getElementById('downloadCsvDetailBtn');
 if (detailBtn) detailBtn.addEventListener('click', unduhCsvDetail);
 
-var edfAllBtn = document.getElementById('downloadEdfAllBtn');
+const edfAllBtn = document.getElementById('downloadEdfAllBtn');
 if (edfAllBtn) edfAllBtn.addEventListener('click', unduhSemuaEdf);
 
-var pngEeg1Btn = document.getElementById('unduhPngEeg1Btn');
+const pngEeg1Btn = document.getElementById('unduhPngEeg1Btn');
 if (pngEeg1Btn) pngEeg1Btn.addEventListener('click', function () { unduhGambarGrafik('eeg1'); });
 
-var edfEeg1Btn = document.getElementById('unduhEdfEeg1Btn');
+const edfEeg1Btn = document.getElementById('unduhEdfEeg1Btn');
 if (edfEeg1Btn) edfEeg1Btn.addEventListener('click', function () { unduhEdfSesi('eeg1'); });
 
-var pngEeg2Btn = document.getElementById('unduhPngEeg2Btn');
+const pngEeg2Btn = document.getElementById('unduhPngEeg2Btn');
 if (pngEeg2Btn) pngEeg2Btn.addEventListener('click', function () { unduhGambarGrafik('eeg2'); });
 
-var edfEeg2Btn = document.getElementById('unduhEdfEeg2Btn');
+const edfEeg2Btn = document.getElementById('unduhEdfEeg2Btn');
 if (edfEeg2Btn) edfEeg2Btn.addEventListener('click', function () { unduhEdfSesi('eeg2'); });
 
 /* ===== Tombol "Mulai Sesi Baru" ===== */
-var mulaiLagiBtn = document.getElementById('mulaiLagiBtn');
+const mulaiLagiBtn = document.getElementById('mulaiLagiBtn');
 if (mulaiLagiBtn) {
   mulaiLagiBtn.addEventListener('click', function () {
-    var yakin = confirm('Yakin mau mulai sesi baru? Semua hasil kuesioner & EEG saat ini akan dihapus.');
+    const yakin = confirm('Yakin mau mulai sesi baru? Semua hasil kuesioner & EEG saat ini akan dihapus.');
     if (!yakin) return;
 
     localStorage.removeItem(KUESIONER_STORAGE_KEY);
-    window.location.href = 'index.html';
+    window.location.href = '../index.html';
   });
 }

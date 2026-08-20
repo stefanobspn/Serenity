@@ -18,7 +18,7 @@
 /* Urutan di array ini menentukan urutan garis di legenda grafik, jadi
    sengaja diurutkan dari frekuensi paling rendah ke paling tinggi —
    sama seperti urutan kartu di eegmonitor.html. */
-var BANDS = [
+const BANDS = [
   { key: 'delta', label: 'Delta', color: '#3b82f6' },
   { key: 'theta', label: 'Theta', color: '#8b5cf6' },
   { key: 'alpha', label: 'Alpha', color: '#10b981' },
@@ -28,7 +28,7 @@ var BANDS = [
 
 // Beberapa tempat cuma butuh nama band-nya saja (tanpa label & warna),
 // misalnya waktu mengisi kartu atau menyusun kolom CSV.
-var BAND_KEYS = BANDS.map(function (band) {
+const BAND_KEYS = BANDS.map(function (band) {
   return band.key;
 });
 

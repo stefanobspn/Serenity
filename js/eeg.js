@@ -42,7 +42,7 @@
 
 
 // --- Konstanta ---
-var MAX_POINTS = 60; // jumlah titik riwayat yang ditampilkan di grafik live
+const MAX_POINTS = 60; // jumlah titik riwayat yang ditampilkan di grafik live
 
 /* Berapa detik pertama yang dibuang sebelum perekaman benar-benar dimulai.
 
@@ -56,31 +56,31 @@ var MAX_POINTS = 60; // jumlah titik riwayat yang ditampilkan di grafik live
    Membuang detik-detik awal ini kelihatan seperti membuang data, padahal
    justru sebaliknya: yang dibuang adalah bagian yang mencemari perbandingan
    antara Tahap Satu dan Tahap Dua nanti. */
-var DETIK_TENANG = 30;
+const DETIK_TENANG = 30;
 
 // Nama elektroda sesuai posisinya di headset, urutannya sama dengan urutan
 // angka yang dikirim SDK resmi lewat /elements/horseshoe.
-var NAMA_ELEKTRODA = ['TP9 (kiri belakang)', 'AF7 (kiri depan)', 'AF8 (kanan depan)', 'TP10 (kanan belakang)'];
+const NAMA_ELEKTRODA = ['TP9 (kiri belakang)', 'AF7 (kiri depan)', 'AF8 (kanan depan)', 'TP10 (kanan belakang)'];
 
 
 // --- Ambil elemen-elemen HTML yang isinya akan kita ubah lewat JS ---
-var statusEl = document.getElementById('status');
-var statusPillEl = document.getElementById('statusPill');
-var jejakJaringanEl = document.getElementById('jejakJaringan');
-var batteryEl = document.getElementById('battery');
-var recordBtn = document.getElementById('recordBtn');
-var stopRecordBtn = document.getElementById('stopRecordBtn');
-var recordStatusEl = document.getElementById('recordStatus');
-var recordStatusWrapperEl = document.getElementById('recordStatusWrapper');
-var demoBtn = document.getElementById('demoBtn');
-var rekamHeadingEl = document.getElementById('rekamHeading');
-var rekamInstruksiEl = document.getElementById('rekamInstruksi');
-var kualitasEl = document.getElementById('kualitas');
-var kualitasPeringatanEl = document.getElementById('kualitasPeringatan');
-var abaikanKualitasEl = document.getElementById('abaikanKualitas');
-var lewatiAwalEl = document.getElementById('lewatiAwal');
-var wadahLewatiAwalEl = document.getElementById('wadahLewatiAwal');
-var penjelasanLewatiAwalEl = document.getElementById('penjelasanLewatiAwal');
+const statusEl = document.getElementById('status');
+const statusPillEl = document.getElementById('statusPill');
+const jejakJaringanEl = document.getElementById('jejakJaringan');
+const batteryEl = document.getElementById('battery');
+const recordBtn = document.getElementById('recordBtn');
+const stopRecordBtn = document.getElementById('stopRecordBtn');
+const recordStatusEl = document.getElementById('recordStatus');
+const recordStatusWrapperEl = document.getElementById('recordStatusWrapper');
+const demoBtn = document.getElementById('demoBtn');
+const rekamHeadingEl = document.getElementById('rekamHeading');
+const rekamInstruksiEl = document.getElementById('rekamInstruksi');
+const kualitasEl = document.getElementById('kualitas');
+const kualitasPeringatanEl = document.getElementById('kualitasPeringatan');
+const abaikanKualitasEl = document.getElementById('abaikanKualitas');
+const lewatiAwalEl = document.getElementById('lewatiAwal');
+const wadahLewatiAwalEl = document.getElementById('wadahLewatiAwal');
+const penjelasanLewatiAwalEl = document.getElementById('penjelasanLewatiAwal');
 
 
 /* ===== Tahap rekam: EEG 1 (baseline) lalu EEG 2 (setelah aktivitas) =====
@@ -96,18 +96,18 @@ var penjelasanLewatiAwalEl = document.getElementById('penjelasanLewatiAwal');
    disimpan di variabel), supaya kalau peserta reload halaman di tengah
    alur (misal EEG 1 sudah kesimpan tapi belum sempat rekam EEG 2), tahapnya
    tetap benar begitu halaman dibuka lagi. */
-var tahapEeg = ambilHasilKuesioner().eeg1 ? 2 : 1;
+let tahapEeg = ambilHasilKuesioner().eeg1 ? 2 : 1;
 
 function tampilkanTahapEeg() {
   if (tahapEeg === 1) {
-    rekamHeadingEl.textContent = 'Rekam Data — EEG 1 (Baseline)';
+    rekamHeadingEl.textContent = 'EEG 1';
     rekamInstruksiEl.textContent = 'Pastikan data sudah mengalir dan band power sudah muncul di atas, baru tekan tombol ini. Tekan "Stop Rekam" kapan saja untuk menyelesaikan sesi ini.';
     recordBtn.textContent = 'Mulai Rekam';
     if (wadahLewatiAwalEl) wadahLewatiAwalEl.hidden = false;
     if (penjelasanLewatiAwalEl) penjelasanLewatiAwalEl.hidden = false;
   } else {
-    rekamHeadingEl.textContent = 'Rekam Data — EEG 2 (Setelah Aktivitas)';
-    rekamInstruksiEl.textContent = 'EEG 1 sudah selesai direkam. Sekarang lakukan aktivitas yang diinstruksikan peneliti (misalnya tes memori/aritmatika), lalu tekan tombol ini untuk merekam EEG 2. Data langsung dikumpulkan tanpa masa tenang agar efek aktivitas segera tercatat.';
+    rekamHeadingEl.textContent = 'EEG 2';
+    rekamInstruksiEl.textContent = 'EEG 1 sudah selesai direkam. Lanjut EEG 2.';
     recordBtn.textContent = 'Mulai Rekam EEG 2';
     if (wadahLewatiAwalEl) wadahLewatiAwalEl.hidden = true;
     if (penjelasanLewatiAwalEl) penjelasanLewatiAwalEl.hidden = true;
@@ -124,7 +124,7 @@ tampilkanTahapEeg();
    dan datanya tidak akan pernah muncul — tanpa pesan error yang jelas.
    Karena itu kondisinya dicek dari awal dan dijelaskan apa yang harus
    dilakukan, daripada peserta bingung menunggu data yang tidak akan datang. */
-var dibukaLewatFile = window.location.protocol === 'file:';
+const dibukaLewatFile = window.location.protocol === 'file:';
 
 
 /* ===== Bagian Kartu Band Power ===== */
@@ -147,7 +147,7 @@ function resetBandCards() {
 // Bikin satu grafik garis dengan 5 dataset (satu per band). Tiap dataset
 // mulai kosong, nanti diisi sedikit-sedikit tiap ada data band power baru
 // (lihat handleBandPower di bawah).
-var chart = new Chart(document.getElementById('eegChart').getContext('2d'), {
+const chart = new Chart(document.getElementById('eegChart').getContext('2d'), {
   type: 'line',
   data: {
     labels: [],
@@ -191,7 +191,7 @@ var chart = new Chart(document.getElementById('eegChart').getContext('2d'), {
    penelitian tetap harus jalan — lebih baik peneliti memilih itu secara sadar
    daripada terjebak tidak bisa merekam sama sekali. */
 
-var kualitasSekarang = null; // array 4 angka, atau null kalau belum ada data
+let kualitasSekarang = null; // array 4 angka, atau null kalau belum ada data
 
 /* Yang dikunci cuma nilai DI ATAS 2, yaitu elektroda yang benar-benar
    jelek/lepas — nilai 2 ("sedang") tetap boleh direkam.
@@ -223,9 +223,9 @@ function adaElektrodaJelek() {
    kolomnya jadi tidak bisa membedakan apa pun. Makanya dihitung juga berapa
    BANYAK data kualitas yang berstatus jelek dibanding seluruhnya: kedipan
    sekejap dan elektroda yang lepas separuh sesi akan kelihatan jauh berbeda. */
-var kualitasTerburuk = null; // array 4 angka selama merekam, atau null
-var jumlahCekKualitas = 0; // berapa kali data kualitas masuk selama sesi rekam
-var jumlahJelekPerElektroda = [0, 0, 0, 0]; // berapa kali tiap elektroda berstatus jelek
+let kualitasTerburuk = null; // array 4 angka selama merekam, atau null
+let jumlahCekKualitas = 0; // berapa kali data kualitas masuk selama sesi rekam
+let jumlahJelekPerElektroda = [0, 0, 0, 0]; // berapa kali tiap elektroda berstatus jelek
 
 function catatKualitasTerburuk(nilaiKualitas) {
   if (!sedangMerekam || !nilaiKualitas) return;
@@ -263,8 +263,8 @@ function perbaruiKualitas(nilaiKualitas) {
   kualitasEl.textContent = ''; // kosongkan tampilan sebelumnya
 
   nilaiKualitas.forEach(function (nilai, i) {
-    var itemEl = document.createElement('li');
-    var status = nilai <= 1 ? 'bagus' : (nilai <= 2 ? 'sedang' : 'jelek');
+    const itemEl = document.createElement('li');
+    const status = nilai <= 1 ? 'bagus' : (nilai <= 2 ? 'sedang' : 'jelek');
     itemEl.textContent = NAMA_ELEKTRODA[i] + ': ' + status;
     itemEl.className = 'kualitas-' + status;
     kualitasEl.appendChild(itemEl);
@@ -277,7 +277,11 @@ function perbaruiKualitas(nilaiKualitas) {
 // Dipisah jadi fungsi sendiri karena dipanggil dari dua tempat: waktu data
 // kualitas baru masuk, dan waktu peneliti mencentang "abaikan".
 function perbaruiPeringatanKualitas() {
-  var bermasalah = adaElektrodaJelek();
+  const bermasalah = adaElektrodaJelek();
+
+  kualitasPeringatanEl.hidden = !bermasalah;
+  recordBtn.disabled = !bolehMulaiRekam();
+}
 
   kualitasPeringatanEl.hidden = !bermasalah;
   recordBtn.disabled = !bolehMulaiRekam();
@@ -311,14 +315,14 @@ abaikanKualitasEl.addEventListener('change', perbaruiPeringatanKualitas);
    puncak gelombang Alpha — lihat docs/RingkasanKarya.md dan
    docs/PenjelasanSamplingRateEEG.md) serta diekspor ke Excel/CSV. */
 
-var sedangMerekam = false;
-var waktuBerjalanDetik = 0;
-var waktuMulaiRekamMs = 0; // timestamp saat data aktif mulai dicatat (setelah masa tenang)
-var timerRekam = null; // penampung id dari setInterval, untuk update tampilan durasi
-var jumlahBandPower = {}; // total penjumlahan tiap band selama rekaman (untuk rata-rata sesi)
-var jumlahSampel = 0; // berapa kali data band power masuk selama rekaman
-var intervalHasil = []; // daftar titik data { detik, delta, theta, alpha, beta, gamma } per sampel sepanjang sesi
-var sisaMasaTenang = 0; // sisa detik masa tenang; selama masih > 0, sampel yang masuk dibuang
+let sedangMerekam = false;
+let waktuBerjalanDetik = 0;
+let waktuMulaiRekamMs = 0; // timestamp saat data aktif mulai dicatat (setelah masa tenang)
+let timerRekam = null; // penampung id dari setInterval, untuk update tampilan durasi
+const jumlahBandPower = {}; // total penjumlahan tiap band selama rekaman (untuk rata-rata sesi)
+let jumlahSampel = 0; // berapa kali data band power masuk selama rekaman
+let intervalHasil = []; // daftar titik data { detik, delta, theta, alpha, beta, gamma } per sampel sepanjang sesi
+let sisaMasaTenang = 0; // sisa detik masa tenang; selama masih > 0, sampel yang masuk dibuang
 
 // Bersiap merekam: kosongkan akumulator, kunci tombol, mulai hitung waktu
 // berjalan (naik terus sampai peserta menekan "Stop Rekam").
@@ -407,12 +411,12 @@ function selesaiRekam() {
     return;
   }
 
-  var hasilEeg = null;
+  let hasilEeg = null;
 
   if (jumlahSampel > 0) {
     hasilEeg = {};
     BANDS.forEach(function (band) {
-      var rataRata = jumlahBandPower[band.key] / jumlahSampel;
+      const rataRata = jumlahBandPower[band.key] / jumlahSampel;
       // "raw" (angka mentah, belum dibulatkan) disimpan terpisah dari
       // "value" (teks siap tampil) supaya halaman Hasil Akhir bisa hitung
       // rasio Theta/Beta secara presisi, tanpa harus parsing balik teks.
@@ -451,7 +455,7 @@ function selesaiRekam() {
 
 /* ===== Menampilkan status koneksi ===== */
 
-var statusKoneksi = 'disconnected';
+let statusKoneksi = 'disconnected';
 
 // Ditulis sebagai fungsi bernama (bukan langsung di dalam penerima pesan SSE)
 // supaya bisa dipanggil ulang secara manual oleh tombol Demo di bawah.
@@ -477,7 +481,7 @@ function handleStatusChange(text, state) {
    atau WiFi sempat putus, browser menyambung ulang SENDIRI tanpa perlu kode
    tambahan — cocok untuk sesi lab yang bisa saja tercolok-cabut. */
 
-var sumberData = null;
+let sumberData = null;
 
 function hubungkanKeBridge() {
   if (dibukaLewatFile) {
@@ -494,7 +498,7 @@ function hubungkanKeBridge() {
   sumberData = new EventSource('/eeg-stream');
 
   sumberData.onmessage = function (event) {
-    var pesan = JSON.parse(event.data);
+    const pesan = JSON.parse(event.data);
 
     if (pesan.tipe === 'status') {
       terimaStatusDariRelay(pesan);
@@ -540,7 +544,7 @@ function terimaStatusDariRelay(pesan) {
 function tampilkanJejakJaringan(pesan) {
   // Relay mengirim angka epoch; jam-nya dirangkai di sini supaya yang tampil
   // adalah jam di komputer yang sedang dipakai, bukan jam server (UTC).
-  var jam = new Date(pesan.waktu).toLocaleTimeString('id-ID');
+  const jam = new Date(pesan.waktu).toLocaleTimeString('id-ID');
 
   jejakJaringanEl.textContent =
     'Paket dari HP (' + pesan.ip + ') pernah sampai jam ' + jam + ' — jaringan OK.';
@@ -601,7 +605,7 @@ function perbaruiKartuBand(powers) {
 // MAX_POINTS data paling baru saja, tidak melebar terus-menerus)
 function tambahTitikGrafik(powers) {
   BANDS.forEach(function (band, i) {
-    var data = chart.data.datasets[i].data;
+    const data = chart.data.datasets[i].data;
     data.push(powers[band.key]);
     if (data.length > MAX_POINTS) {
       data.shift(); // buang titik paling lama (paling kiri di grafik)
@@ -630,8 +634,8 @@ function tambahSampelJikaSedangRekam(powers) {
   jumlahSampel++;
 
   // Hitung detik berjalan dengan presisi 2 desimal (contoh: 0.10, 0.20, ...)
-  var detikSekarang = parseFloat(((Date.now() - waktuMulaiRekamMs) / 1000).toFixed(2));
-  var titik = { detik: detikSekarang };
+  const detikSekarang = parseFloat(((Date.now() - waktuMulaiRekamMs) / 1000).toFixed(2));
+  const titik = { detik: detikSekarang };
   BANDS.forEach(function (band) {
     titik[band.key] = powers[band.key];
   });
@@ -680,7 +684,7 @@ window.addEventListener('beforeunload', function (event) {
 // Buat angka band power acak, cuma buat simulasi waktu belum ada headset
 // fisik. Range-nya sekadar mendekati skala data asli, BUKAN data EEG asli.
 function buatDataDummy() {
-  var powers = {};
+  const powers = {};
   BANDS.forEach(function (band) {
     powers[band.key] = Math.random() * 2 + 0.1;
   });
@@ -695,14 +699,14 @@ demoBtn.addEventListener('click', function () {
   // tidak ada jalan lain buat data asli menyelinap masuk selagi demo jalan.
   if (sumberData) sumberData.close();
 
-  handleStatusChange('Terhubung (data dummy, khusus development)', 'connected');
+  handleStatusChange('Terhubung (dummy)', 'connected');
   batteryEl.textContent = 'Battery: 85% (dummy)';
   perbaruiKualitas([1, 1, 1, 1]); // pura-pura semua elektroda menempel bagus
 
   // ~2x per detik, mirip kecepatan data asli dari headset. Tidak perlu
   // tombol "stop" — interval ini otomatis berhenti begitu halaman
   // berpindah (misalnya redirect ke hasilakhir.html setelah rekam selesai).
-  var timerDemo = setInterval(function () {
+  const timerDemo = setInterval(function () {
     handleBandPower(buatDataDummy());
   }, 500);
 });

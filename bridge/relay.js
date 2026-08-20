@@ -42,10 +42,10 @@
    Aliran datanya memang satu arah (relay -> browser), jadi kemampuan dua arah
    milik WebSocket tidak terpakai di sini. */
 
-var dgram = require('dgram');
-var http = require('http');
-var fs = require('fs');
-var path = require('path');
+const dgram = require('dgram');
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
 
 /* --- Pengaturan ---
@@ -57,27 +57,27 @@ var path = require('path');
    contoh Android bawaan SDK memakai 7000. Yang penting angka di sini SAMA
    dengan angka yang diisi di kolom "Port" aplikasi Muse di HP. */
 function ambilArgAngka(nama, bawaan) {
-  var awalan = '--' + nama + '=';
-  for (var i = 2; i < process.argv.length; i++) {
+  const awalan = '--' + nama + '=';
+  for (let i = 2; i < process.argv.length; i++) {
     if (process.argv[i].indexOf(awalan) === 0) {
-      var angka = parseInt(process.argv[i].substring(awalan.length), 10);
+      const angka = parseInt(process.argv[i].substring(awalan.length), 10);
       if (angka > 0 && angka < 65536) return angka;
     }
   }
   return bawaan;
 }
 
-var PORT_UDP = ambilArgAngka('port-udp', 7000); // port tempat HP mengirim OSC
-var PORT_WEB = ambilArgAngka('port-web', 8080); // port untuk membuka halaman Serenity
-var AKAR_SITUS = path.join(__dirname, '..'); // folder proyek Serenity
+const PORT_UDP = ambilArgAngka('port-udp', 7000); // port tempat HP mengirim OSC
+const PORT_WEB = ambilArgAngka('port-web', 8080); // port untuk membuka halaman Serenity
+const AKAR_SITUS = path.join(__dirname, '..'); // folder proyek Serenity
 
 // Tiap berapa milidetik data terbaru dikirim ke browser. 100ms = 10x per
 // detik, kira-kira sama dengan kecepatan band power keluar dari headset.
-var JEDA_KIRIM_MS = 100;
+const JEDA_KIRIM_MS = 100;
 
 // Kalau selama sekian milidetik tidak ada satu pun paket UDP masuk, anggap
 // aliran datanya putus (HP dimatikan, keluar dari WiFi, aplikasi ditutup).
-var BATAS_SEPI_MS = 2000;
+const BATAS_SEPI_MS = 2000;
 
 
 /* ==========================================================================
@@ -102,15 +102,15 @@ var BATAS_SEPI_MS = 2000;
 // Baca satu teks OSC mulai dari posisi 'mulai'. Mengembalikan teksnya dan
 // posisi byte berikutnya (sudah memperhitungkan ganjalan kelipatan 4 tadi).
 function bacaTeksOsc(buf, mulai) {
-  var akhir = mulai;
+  let akhir = mulai;
   while (akhir < buf.length && buf[akhir] !== 0) akhir++;
   if (akhir >= buf.length) return null; // paket rusak: tidak ketemu byte nol
 
-  var teks = buf.toString('ascii', mulai, akhir);
+  const teks = buf.toString('ascii', mulai, akhir);
 
   // panjang teks + 1 byte nol, lalu dibulatkan ke atas ke kelipatan 4
-  var panjangTerpakai = akhir - mulai + 1;
-  var panjangDiganjal = Math.ceil(panjangTerpakai / 4) * 4;
+  const panjangTerpakai = akhir - mulai + 1;
+  const panjangDiganjal = Math.ceil(panjangTerpakai / 4) * 4;
 
   return { teks: teks, berikutnya: mulai + panjangDiganjal };
 }
@@ -119,17 +119,17 @@ function bacaTeksOsc(buf, mulai) {
 // Balikin null kalau paketnya tidak dikenali — lebih baik diam-diam
 // dilewati daripada bikin relay-nya mati di tengah sesi rekam.
 function bacaPesanOsc(buf) {
-  var alamat = bacaTeksOsc(buf, 0);
+  const alamat = bacaTeksOsc(buf, 0);
   if (!alamat) return null;
 
-  var typeTag = bacaTeksOsc(buf, alamat.berikutnya);
+  const typeTag = bacaTeksOsc(buf, alamat.berikutnya);
   if (!typeTag || typeTag.teks[0] !== ',') return null;
 
-  var nilai = [];
-  var posisi = typeTag.berikutnya;
+  const nilai = [];
+  let posisi = typeTag.berikutnya;
 
   // Huruf pertama type tag adalah koma, jadi mulai dari indeks 1
-  for (var i = 1; i < typeTag.teks.length; i++) {
+  for (let i = 1; i < typeTag.teks.length; i++) {
     if (typeTag.teks[i] === 'f') {
       if (posisi + 4 > buf.length) break; // paket terpotong, berhenti saja
       nilai.push(buf.readFloatBE(posisi));
@@ -155,16 +155,16 @@ function bacaPesanOsc(buf) {
    dia mengirim pesan satuan, yang ditangani cabang 'else' di bawah. */
 function bacaPaketOsc(buf, tampung) {
   if (buf.length >= 8 && buf.toString('ascii', 0, 7) === '#bundle') {
-    var posisi = 16; // lewati "#bundle\0" (8 byte) + timetag (8 byte)
+    let posisi = 16; // lewati "#bundle\0" (8 byte) + timetag (8 byte)
     while (posisi + 4 <= buf.length) {
-      var panjang = buf.readInt32BE(posisi);
+      const panjang = buf.readInt32BE(posisi);
       posisi += 4;
       if (panjang <= 0 || posisi + panjang > buf.length) break;
       bacaPaketOsc(buf.subarray(posisi, posisi + panjang), tampung);
       posisi += panjang;
     }
   } else {
-    var pesan = bacaPesanOsc(buf);
+    const pesan = bacaPesanOsc(buf);
     if (pesan) tampung.push(pesan);
   }
 }
@@ -201,11 +201,11 @@ function bacaPaketOsc(buf, tampung) {
    Kalau angka Bel dikirim mentah-mentah ke sana, rasionya jadi tidak
    bermakna, dan bahkan bisa berbalik tanda waktu nilainya melewati nol. */
 function rataRataKanal(nilaiBel) {
-  var jumlah = 0;
-  var banyak = 0;
+  let jumlah = 0;
+  let banyak = 0;
 
-  for (var i = 0; i < nilaiBel.length; i++) {
-    var bel = nilaiBel[i];
+  for (let i = 0; i < nilaiBel.length; i++) {
+    const bel = nilaiBel[i];
     if (typeof bel !== 'number' || !isFinite(bel)) continue; // lewati NaN
 
     /* Nol PERSIS bukan pengukuran, melainkan penanda "kanal ini tidak punya
@@ -245,12 +245,12 @@ function rataRataKanal(nilaiBel) {
    tiap band di sini, lalu mengirim potretnya ke browser secara berkala
    (lihat BAGIAN 5). Cara ini juga tahan terhadap paket yang hilang. */
 
-var powerTerbaru = { delta: null, theta: null, alpha: null, beta: null, gamma: null };
-var kualitasTerbaru = null;  // nilai horseshoe/HSI per elektroda
-var batteryTerbaru = null;   // persen baterai headset
-var waktuPaketTerakhir = 0;  // buat mendeteksi aliran data yang putus
-var waktuPaketPertama = 0;   // buat memberi tenggang sebelum memperingatkan (lihat periksaBandPowerHilang)
-var waktuKontakTerakhir = 0; // kapan terakhir ada kanal yang datanya sah (lihat periksaKontakHilang)
+let powerTerbaru = { delta: null, theta: null, alpha: null, beta: null, gamma: null };
+let kualitasTerbaru = null;  // nilai horseshoe/HSI per elektroda
+let batteryTerbaru = null;   // persen baterai headset
+let waktuPaketTerakhir = 0;  // buat mendeteksi aliran data yang putus
+let waktuPaketPertama = 0;   // buat memberi tenggang sebelum memperingatkan (lihat periksaBandPowerHilang)
+let waktuKontakTerakhir = 0; // kapan terakhir ada kanal yang datanya sah (lihat periksaKontakHilang)
 
 /* Akhiran alamat OSC -> nama band di Serenity.
 
@@ -266,7 +266,7 @@ var waktuKontakTerakhir = 0; // kapan terakhir ada kanal yang datanya sah (lihat
    (lihat Muse Lab Guide bagian 2a). Dengan mencocokkan dari belakang, apa pun
    isinya tetap terbaca — jadi tidak ada lagi kasus "sudah streaming tapi
    datanya tidak muncul" cuma gara-gara ada awalan yang tidak terduga. */
-var AKHIRAN_BAND = {
+const AKHIRAN_BAND = {
   '/elements/delta_absolute': 'delta',
   '/elements/theta_absolute': 'theta',
   '/elements/alpha_absolute': 'alpha',
@@ -275,8 +275,8 @@ var AKHIRAN_BAND = {
 };
 
 function cariBand(alamat) {
-  var daftarAkhiran = Object.keys(AKHIRAN_BAND);
-  for (var i = 0; i < daftarAkhiran.length; i++) {
+  const daftarAkhiran = Object.keys(AKHIRAN_BAND);
+  for (let i = 0; i < daftarAkhiran.length; i++) {
     if (alamat.length >= daftarAkhiran[i].length &&
         alamat.indexOf(daftarAkhiran[i], alamat.length - daftarAkhiran[i].length) !== -1) {
       return AKHIRAN_BAND[daftarAkhiran[i]];
@@ -302,7 +302,7 @@ function berakhiranDengan(alamat, akhiran) {
    memperlihatkan daftar sinyal yang SEBENARNYA dikirim — jadi tidak perlu
    menebak-nebak. Ditandai "(dipakai)" atau "(diabaikan)" supaya langsung
    kelihatan mana yang berguna buat Serenity. */
-var alamatSudahDicatat = {};
+const alamatSudahDicatat = {};
 
 function catatAlamatBaru(alamat, dipakai) {
   if (alamatSudahDicatat[alamat]) return;
@@ -311,14 +311,14 @@ function catatAlamatBaru(alamat, dipakai) {
 }
 
 function terimaPesan(pesan) {
-  var alamat = pesan.alamat;
+  const alamat = pesan.alamat;
   waktuPaketTerakhir = Date.now();
   if (waktuPaketPertama === 0) waktuPaketPertama = waktuPaketTerakhir;
 
-  var namaBand = cariBand(alamat);
+  const namaBand = cariBand(alamat);
   if (namaBand) {
     catatAlamatBaru(alamat, true);
-    var linear = rataRataKanal(pesan.nilai);
+    const linear = rataRataKanal(pesan.nilai);
 
     /* null (semua kanal mati) sengaja ikut disimpan, tidak disaring seperti
        dulu. Menyimpan nilai lama waktu kanalnya mati justru bikin layar
@@ -365,7 +365,7 @@ function terimaPesan(pesan) {
     // Sebagian sumber mengirim persen apa adanya (0-100), sebagian lagi
     // mengirimnya dikali 100 (jadi 0-10000). Dibedakan dari besarnya angka,
     // supaya kedua sumber sama-sama tampil benar.
-    var persen = pesan.nilai[0];
+    const persen = pesan.nilai[0];
     batteryTerbaru = persen > 100 ? persen / 100 : persen;
     return;
   }
@@ -389,10 +389,10 @@ function terimaPesan(pesan) {
    "data: <isi>\n\n". Dua baris kosong di akhir itulah penanda satu pesan
    selesai. Isinya kita pakai JSON supaya sisi browser tinggal JSON.parse. */
 
-var browserTerhubung = [];
+const browserTerhubung = [];
 
 function siarkan(objek) {
-  var teks = 'data: ' + JSON.stringify(objek) + '\n\n';
+  const teks = 'data: ' + JSON.stringify(objek) + '\n\n';
   browserTerhubung.forEach(function (res) {
     res.write(teks);
   });
@@ -400,12 +400,12 @@ function siarkan(objek) {
 
 // Status koneksi tidak dikirim oleh HP — kita simpulkan sendiri dari ada
 // tidaknya paket yang masuk belakangan ini.
-var statusTerakhir = null;
+let statusTerakhir = null;
 
 function kirimStatusJikaBerubah() {
-  var adaData = waktuPaketTerakhir > 0 &&
+  const adaData = waktuPaketTerakhir > 0 &&
                 (Date.now() - waktuPaketTerakhir) < BATAS_SEPI_MS;
-  var status = adaData ? 'connected' : 'disconnected';
+  const status = adaData ? 'connected' : 'disconnected';
 
   if (status === statusTerakhir) return; // jangan spam browser tiap 100ms
   statusTerakhir = status;
@@ -443,7 +443,7 @@ function kirimStatusJikaBerubah() {
     tipe: 'status',
     state: status,
     teks: adaData
-      ? 'Terhubung — data mengalir dari SDK resmi Muse'
+      ? 'Terhubung'
       : 'Menunggu data dari HP... (pastikan aplikasi Muse sudah streaming ke IP laptop ini)'
   });
 }
@@ -453,7 +453,7 @@ function kirimStatusJikaBerubah() {
 function kirimPowerTerbaru() {
   if (statusTerakhir !== 'connected') return;
 
-  var lengkap = Object.keys(powerTerbaru).every(function (key) {
+  const lengkap = Object.keys(powerTerbaru).every(function (key) {
     return powerTerbaru[key] !== null;
   });
   if (!lengkap) return;
@@ -488,15 +488,15 @@ setInterval(function () {
    padahal band power-nya sudah nol semua. Jadi mutu kontak yang dilaporkan
    headset TIDAK cukup untuk menyimpulkan datanya sah — yang menentukan adalah
    ada tidaknya angka yang benar-benar sah di band power itu sendiri. */
-var BATAS_KONTAK_MS = 2000;
-var sedangKontakHilang = false;
+const BATAS_KONTAK_MS = 2000;
+let sedangKontakHilang = false;
 
 function periksaKontakHilang() {
   // Aliran datanya sendiri yang putus? Itu bagian kirimStatusJikaBerubah().
   if (statusTerakhir !== 'connected') return;
   if (waktuKontakTerakhir === 0) return; // belum pernah ada band power sah sama sekali
 
-  var hilang = (Date.now() - waktuKontakTerakhir) > BATAS_KONTAK_MS;
+  const hilang = (Date.now() - waktuKontakTerakhir) > BATAS_KONTAK_MS;
   if (hilang === sedangKontakHilang) return; // tidak ada perubahan, jangan spam
   sedangKontakHilang = hilang;
 
@@ -505,8 +505,7 @@ function periksaKontakHilang() {
     siarkan({
       tipe: 'status',
       state: 'error',
-      teks: 'Headset tidak menempel di kepala — semua elektroda mengirim data kosong. ' +
-            'Pasang kembali headset-nya sampai band power di atas bergerak lagi.'
+      teks: 'Headset tidak menempel di kepala'
     });
     return;
   }
@@ -529,8 +528,8 @@ function periksaKontakHilang() {
    Muse Lab semuanya cuma memperlihatkan sinyal mentah. Jadi kalau band power
    ternyata tidak ikut dikirim, hal itu harus ketahuan dalam hitungan detik,
    bukan setelah satu sesi perekaman terlanjur gagal. */
-var PERINGATAN_SETELAH_MS = 5000;
-var sudahMemperingatkan = false;
+const PERINGATAN_SETELAH_MS = 5000;
+let sudahMemperingatkan = false;
 
 function periksaBandPowerHilang() {
   if (sudahMemperingatkan) return;
@@ -546,7 +545,7 @@ function periksaBandPowerHilang() {
   if (waktuKontakTerakhir !== 0) return;
   if (Date.now() - waktuPaketTerakhir > BATAS_SEPI_MS) return; // aliran sudah putus
 
-  var adaSatuBand = Object.keys(powerTerbaru).some(function (key) {
+  const adaSatuBand = Object.keys(powerTerbaru).some(function (key) {
     return powerTerbaru[key] !== null;
   });
   if (adaSatuBand) return; // aman, band power sampai
@@ -592,7 +591,7 @@ function periksaBandPowerHilang() {
    di alamat yang sama, jadi tidak ada urusan CORS sama sekali. Cukup satu
    perintah yang perlu dijalankan waktu sesi penelitian. */
 
-var TIPE_FILE = {
+const TIPE_FILE = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -618,7 +617,7 @@ function layaniSse(req, res) {
     tipe: 'status',
     state: statusTerakhir || 'disconnected',
     teks: statusTerakhir === 'connected'
-      ? 'Terhubung — data mengalir dari SDK resmi Muse'
+      ? 'Terhubung'
       : 'Menunggu data dari HP...'
   }) + '\n\n');
 
@@ -632,19 +631,19 @@ function layaniSse(req, res) {
   // Buang dari daftar begitu tab-nya ditutup, supaya relay tidak terus
   // menulis ke koneksi yang sudah mati.
   req.on('close', function () {
-    var posisi = browserTerhubung.indexOf(res);
+    const posisi = browserTerhubung.indexOf(res);
     if (posisi !== -1) browserTerhubung.splice(posisi, 1);
     console.log('[relay] browser terputus (sisa: ' + browserTerhubung.length + ')');
   });
 }
 
 function layaniFile(req, res) {
-  var alamat = req.url.split('?')[0];
+  let alamat = req.url.split('?')[0];
   if (alamat === '/') alamat = '/index.html';
 
   // path.normalize + cek awalan mencegah alamat nakal seperti
   // "/../../etc/passwd" keluar dari folder proyek.
-  var berkas = path.normalize(path.join(AKAR_SITUS, alamat));
+  const berkas = path.normalize(path.join(AKAR_SITUS, alamat));
   if (berkas.indexOf(AKAR_SITUS) !== 0) {
     res.writeHead(403);
     res.end('Akses ditolak');
@@ -657,13 +656,13 @@ function layaniFile(req, res) {
       res.end('Tidak ketemu: ' + alamat);
       return;
     }
-    var tipe = TIPE_FILE[path.extname(berkas)] || 'application/octet-stream';
+    const tipe = TIPE_FILE[path.extname(berkas)] || 'application/octet-stream';
     res.writeHead(200, { 'Content-Type': tipe });
     res.end(isi);
   });
 }
 
-var server = http.createServer(function (req, res) {
+const server = http.createServer(function (req, res) {
   if (req.url.split('?')[0] === '/eeg-stream') {
     layaniSse(req, res);
   } else {
@@ -701,7 +700,7 @@ server.listen(PORT_WEB, function () {
    diubah satuannya (BAGIAN 2), ditampung (BAGIAN 3), dan dikirim ke
    browser (BAGIAN 4). */
 
-var soket = dgram.createSocket('udp4');
+const soket = dgram.createSocket('udp4');
 
 /* Catat sekali tiap alat yang mengirim paket ke sini.
 
@@ -710,7 +709,7 @@ var soket = dgram.createSocket('udp4');
    Kalau baris ini tidak pernah muncul, masalahnya di jaringan (IP salah,
    beda WiFi, firewall, atau WiFi-nya memblokir komunikasi antar-perangkat)
    — bukan di Serenity. */
-var pengirimSudahDicatat = {};
+const pengirimSudahDicatat = {};
 
 /* Jejak "pernah sampai" ini disimpan, bukan cuma disiarkan sekali lewat.
 
@@ -719,7 +718,7 @@ var pengirimSudahDicatat = {};
    Padahal siarkan() cuma sampai ke browser yang sedang terbuka. Kalau
    jejaknya tidak disimpan, bukti paling menenangkan itu justru hilang di
    saat paling dibutuhkan — dan klien menyangka Send Test-nya gagal. */
-var jejakJaringan = null;
+let jejakJaringan = null;
 
 function catatPengirimBaru(ip) {
   if (pengirimSudahDicatat[ip]) return;
@@ -743,7 +742,7 @@ function catatPengirimBaru(ip) {
 soket.on('message', function (buf, rinfo) {
   catatPengirimBaru(rinfo.address);
 
-  var daftarPesan = [];
+  const daftarPesan = [];
   bacaPaketOsc(buf, daftarPesan);
 
   /* Paket sampai tapi tidak bisa dibaca sebagai OSC. Tetap dicatat sekali,
@@ -784,7 +783,7 @@ soket.bind(PORT_UDP, '0.0.0.0', function () {
    ada NAT di depannya). Kalau begitu, pakai alamat IP publik dari panel
    penyedia server, bukan yang di bawah ini. */
 function cetakAlamatIp() {
-  var kartuJaringan = require('os').networkInterfaces();
+  const kartuJaringan = require('os').networkInterfaces();
   Object.keys(kartuJaringan).forEach(function (nama) {
     kartuJaringan[nama].forEach(function (info) {
       if (info.family === 'IPv4' && !info.internal) {

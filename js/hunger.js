@@ -7,8 +7,8 @@
    (Skala ini tidak punya kategori TINGGI/RENDAH seperti PSS-5 & SEES-10,
    jadi nilainya disimpan & ditampilkan apa adanya.) */
 
-var form = document.getElementById('formHunger');
-var pesanValidasiEl = document.getElementById('pesanValidasi');
+const form = document.getElementById('formHunger');
+const pesanValidasiEl = document.getElementById('pesanValidasi');
 
 // Kalau peserta sempat pindah dari sini lalu tekan "Kembali", isi ulang
 // jawaban yang sudah dipilih sebelumnya (lihat storage.js).
@@ -17,15 +17,15 @@ muatJawabanTersimpan(form, 'hunger');
 form.addEventListener('submit', function (event) {
   event.preventDefault(); // urus perpindahan halaman sendiri lewat JS
 
-  var dataForm = new FormData(form);
-  var rawValue = dataForm.get('q1');
+  const dataForm = new FormData(form);
+  const rawValue = dataForm.get('q1');
 
   if (!rawValue) {
     if (pesanValidasiEl) {
       pesanValidasiEl.textContent = 'Harap pilih salah satu skala rasa lapar sebelum lanjut.';
       pesanValidasiEl.hidden = false;
     }
-    var targetField = document.getElementById('field-q1');
+    const targetField = document.getElementById('field-q1');
     if (targetField) {
       targetField.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -34,7 +34,7 @@ form.addEventListener('submit', function (event) {
 
   if (pesanValidasiEl) pesanValidasiEl.hidden = true;
 
-  var skor = Number(rawValue);
+  const skor = Number(rawValue);
 
   // jawaban disimpan mentah juga (walau di sini cuma 1 pertanyaan) supaya
   // konsisten dengan pss5.js & sees10.js dan bisa dipulihkan muatJawabanTersimpan()

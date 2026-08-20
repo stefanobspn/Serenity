@@ -11,12 +11,12 @@
    dipakai di sini karena tiap kuesioner ada di halaman terpisah, tapi
    hasilnya perlu "dibawa" sampai ke halaman EEG. */
 
-var KUESIONER_STORAGE_KEY = 'serenity_kuesioner';
+const KUESIONER_STORAGE_KEY = 'serenity_kuesioner';
 
 // Simpan hasil satu bagian kuesioner (misal 'pss5'), tanpa menghapus
 // hasil bagian lain yang sudah tersimpan sebelumnya
 function simpanHasilKuesioner(namaBagian, data) {
-  var semuaHasil = ambilHasilKuesioner();
+  const semuaHasil = ambilHasilKuesioner();
   semuaHasil[namaBagian] = data;
 
   // localStorage cuma bisa menyimpan teks, jadi objek JS-nya diubah
@@ -28,7 +28,7 @@ function simpanHasilKuesioner(namaBagian, data) {
 // Kalau belum ada data sama sekali, balikin objek kosong {} supaya
 // halaman yang memanggil tidak perlu cek "null atau bukan" sendiri.
 function ambilHasilKuesioner() {
-  var teksTersimpan = localStorage.getItem(KUESIONER_STORAGE_KEY);
+  const teksTersimpan = localStorage.getItem(KUESIONER_STORAGE_KEY);
   if (!teksTersimpan) return {};
   return JSON.parse(teksTersimpan); // ubah teks JSON balik jadi objek JS
 }
@@ -42,12 +42,12 @@ function ambilHasilKuesioner() {
 // dari jawaban terakhir. Jadi kita baca balik dari localStorage dan
 // centang ulang pilihan yang cocok.
 function muatJawabanTersimpan(form, namaBagian) {
-  var hasil = ambilHasilKuesioner();
-  var jawaban = hasil[namaBagian] && hasil[namaBagian].jawaban;
+  const hasil = ambilHasilKuesioner();
+  const jawaban = hasil[namaBagian] && hasil[namaBagian].jawaban;
   if (!jawaban) return; // belum pernah diisi, biarkan form tetap kosong
 
   Object.keys(jawaban).forEach(function (namaInput) {
-    var input = form.querySelector(
+    const input = form.querySelector(
       'input[name="' + namaInput + '"][value="' + jawaban[namaInput] + '"]'
     );
     if (input) input.checked = true;

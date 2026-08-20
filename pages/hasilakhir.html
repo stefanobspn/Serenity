@@ -10,9 +10,6 @@
 
 <body>
     <header>
-        <div class="landing-badge" style="margin-bottom: 8px;">
-            <span>🌿 Hasil Analisis & Rekomendasi Riset</span>
-        </div>
         <h1>Hasil Akhir & Analisis EEG</h1>
         <p>Ringkasan perbandingan respon stres, emotional eating, dan parameter gelombang otak sebelum dan sesudah terapi.</p>
     </header>
@@ -28,7 +25,7 @@
             <p id="eegKosong" class="catatan" hidden>Belum ada data rekaman EEG yang tersimpan.</p>
 
             <div id="eegPerbandingan" hidden>
-                <h3>EEG 1 (Baseline — Tanpa Aroma)</h3>
+                <h3>EEG 1</h3>
                 <ul id="bandsEeg1" class="bands-list">
                     <li class="card band-delta">
                         <span class="label">Delta <small>0.5–4Hz</small></span>
@@ -59,7 +56,7 @@
                     <button type="button" id="unduhEdfEeg1Btn" class="btn-opsi">Unduh File EEG 1 (.EDF)</button>
                 </div>
 
-                <h3 style="margin-top: 24px;">EEG 2 (Setelah Aktivitas & Aroma)</h3>
+                <h3 style="margin-top: 24px;">EEG 2</h3>
                 <ul id="bandsEeg2" class="bands-list">
                     <li class="card band-delta">
                         <span class="label">Delta <small>0.5–4Hz</small></span>
@@ -105,7 +102,7 @@
         <div class="aksi-utama">
             <button id="downloadCsvRingkasBtn" class="btn-utama">Unduh Ringkasan Hasil (CSV)</button>
             <button id="downloadCsvDetailBtn" class="btn-sekunder">Unduh Detail Waktu (CSV)</button>
-            <button id="downloadEdfAllBtn" class="btn-sekunder">Unduh Semua File Medis (.EDF)</button>
+            <button id="downloadEdfAllBtn" class="btn-sekunder">Unduh Semua File EDF (.EDF)</button>
             <button id="mulaiLagiBtn" class="btn-batal">Mulai Sesi Baru</button>
         </div>
         <p id="csvKosong" class="catatan" hidden style="margin-top: 12px;">Belum ada data EEG untuk diunduh.</p>

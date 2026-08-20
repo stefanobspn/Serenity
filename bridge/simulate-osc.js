@@ -21,16 +21,16 @@
    PERHATIAN: angka yang dikirim di sini ANGKA KARANGAN, bukan data EEG asli.
    Bentuk dan satuannya saja yang ditiru supaya realistis. */
 
-var dgram = require('dgram');
+const dgram = require('dgram');
 
-var PORT_UDP = 7000;
-var TUJUAN = '127.0.0.1';
+const PORT_UDP = 7000;
+const TUJUAN = '127.0.0.1';
 
 // Mode "--tetap" mengirim angka yang sudah diketahui hasilnya, supaya
 // konversi log->linear di relay.js bisa dicek dengan hitungan tangan.
 // Contoh: alpha = 1.0 Bel harus muncul sebagai 10.00 di halaman monitor,
 // karena 10 pangkat 1 = 10. Lihat BAGIAN 2 di relay.js.
-var MODE_TETAP = process.argv.indexOf('--tetap') !== -1;
+const MODE_TETAP = process.argv.indexOf('--tetap') !== -1;
 
 /* Mode "--mentah" meniru kegagalan yang paling mungkin terjadi dengan headset
    asli: aplikasi Muse streaming dengan lancar, tapi yang dikirim cuma sinyal
@@ -39,9 +39,9 @@ var MODE_TETAP = process.argv.indexOf('--tetap') !== -1;
 
    Gunanya di sini: memastikan peringatan di halaman monitor benar-benar
    muncul, tanpa harus menunggu headset aslinya ada di tangan. */
-var MODE_MENTAH = process.argv.indexOf('--mentah') !== -1;
+const MODE_MENTAH = process.argv.indexOf('--mentah') !== -1;
 
-var soket = dgram.createSocket('udp4');
+const soket = dgram.createSocket('udp4');
 
 
 /* ==========================================================================
@@ -52,22 +52,22 @@ var soket = dgram.createSocket('udp4');
    float ditulis 4 byte, urutan big-endian. */
 
 function tulisTeksOsc(teks) {
-  var panjang = Math.ceil((teks.length + 1) / 4) * 4;
-  var buf = Buffer.alloc(panjang); // Buffer.alloc otomatis berisi nol semua
+  const panjang = Math.ceil((teks.length + 1) / 4) * 4;
+  const buf = Buffer.alloc(panjang); // Buffer.alloc otomatis berisi nol semua
   buf.write(teks, 0, 'ascii');
   return buf;
 }
 
 function buatPesanOsc(alamat, nilai) {
-  var bufAlamat = tulisTeksOsc(alamat);
+  const bufAlamat = tulisTeksOsc(alamat);
 
   // Type tag: koma diikuti satu huruf 'f' per argumen float
-  var typeTag = ',';
-  for (var i = 0; i < nilai.length; i++) typeTag += 'f';
-  var bufTypeTag = tulisTeksOsc(typeTag);
+  let typeTag = ',';
+  for (let i = 0; i < nilai.length; i++) typeTag += 'f';
+  const bufTypeTag = tulisTeksOsc(typeTag);
 
-  var bufNilai = Buffer.alloc(nilai.length * 4);
-  for (var j = 0; j < nilai.length; j++) {
+  const bufNilai = Buffer.alloc(nilai.length * 4);
+  for (let j = 0; j < nilai.length; j++) {
     bufNilai.writeFloatBE(nilai[j], j * 4);
   }
 
@@ -75,7 +75,7 @@ function buatPesanOsc(alamat, nilai) {
 }
 
 function kirim(alamat, nilai) {
-  var paket = buatPesanOsc(alamat, nilai);
+  const paket = buatPesanOsc(alamat, nilai);
   soket.send(paket, 0, paket.length, PORT_UDP, TUJUAN);
 }
 
@@ -92,7 +92,7 @@ function kirim(alamat, nilai) {
    halus) dan bukan seperti garis gemetar. Tiap band diberi kecepatan sinus
    berbeda supaya garisnya tidak bergerak seragam. */
 
-var BAND_PALSU = [
+const BAND_PALSU = [
   { nama: 'delta', tengah: 0.9, ayun: 0.35, kecepatan: 0.7 },
   { nama: 'theta', tengah: 0.5, ayun: 0.30, kecepatan: 1.1 },
   { nama: 'alpha', tengah: 0.7, ayun: 0.45, kecepatan: 0.5 },
@@ -102,7 +102,7 @@ var BAND_PALSU = [
 
 // Nilai tetap untuk mode --tetap. Sengaja dipilih angka bulat supaya hasil
 // konversinya gampang dicek di kepala: 10^1 = 10, 10^0.5 = 3.16, 10^0 = 1.
-var NILAI_TETAP = {
+const NILAI_TETAP = {
   delta: 0.0,   // -> 1.00
   theta: 1.0,   // -> 10.00
   alpha: 1.0,   // -> 10.00
@@ -110,7 +110,7 @@ var NILAI_TETAP = {
   gamma: 0.0    // -> 1.00
 };
 
-var detik = 0;
+let detik = 0;
 
 function kirimSatuPutaran() {
   // Cuma sinyal mentah: 4 kanal EEG dalam mikrovolt, tidak ada band power.
@@ -124,7 +124,7 @@ function kirimSatuPutaran() {
   }
 
   BAND_PALSU.forEach(function (band) {
-    var nilaiKanal;
+    let nilaiKanal;
 
     if (MODE_TETAP) {
       nilaiKanal = [
@@ -134,7 +134,7 @@ function kirimSatuPutaran() {
     } else {
       // Tiap elektroda diberi sedikit selisih acak, meniru kenyataan bahwa
       // keempat elektroda tidak pernah membaca angka yang persis sama.
-      var dasar = band.tengah + band.ayun * Math.sin(detik * band.kecepatan);
+      const dasar = band.tengah + band.ayun * Math.sin(detik * band.kecepatan);
       nilaiKanal = [
         dasar + (Math.random() - 0.5) * 0.1,
         dasar + (Math.random() - 0.5) * 0.1,
@@ -149,7 +149,7 @@ function kirimSatuPutaran() {
   // Kualitas kontak elektroda: 1 = bagus, 2 = sedang, 4 = jelek.
   // Di mode normal, satu elektroda sesekali dibuat memburuk supaya
   // indikator kualitas sinyal di halaman monitor ikut kelihatan bekerja.
-  var elektrodaJelek = !MODE_TETAP && Math.sin(detik * 0.15) > 0.8;
+  const elektrodaJelek = !MODE_TETAP && Math.sin(detik * 0.15) > 0.8;
   kirim('/elements/horseshoe', [1, elektrodaJelek ? 4 : 1, 1, 1]);
 
   kirim('/batt', [85]);

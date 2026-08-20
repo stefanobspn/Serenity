@@ -22,53 +22,53 @@
 function buatFileEdf(namaPeserta, sesiLabel, titikTitik) {
   if (!titikTitik || titikTitik.length === 0) return null;
 
-  var durasiDetik = Math.ceil(titikTitik[titikTitik.length - 1].detik) || 1;
-  var sampelPerDetik = 10; // ~10 sampel per detik (100ms interval)
-  var jumlahKanal = BANDS.length; // 5 kanal (Delta, Theta, Alpha, Beta, Gamma)
-  var totalSampelPerKanal = durasiDetik * sampelPerDetik;
+  const durasiDetik = Math.ceil(titikTitik[titikTitik.length - 1].detik) || 1;
+  const sampelPerDetik = 10; // ~10 sampel per detik (100ms interval)
+  const jumlahKanal = BANDS.length; // 5 kanal (Delta, Theta, Alpha, Beta, Gamma)
+  const totalSampelPerKanal = durasiDetik * sampelPerDetik;
 
   // Siapkan larik data untuk tiap kanal (di-resample/interpolasi ke 10 sampel/detik per kanal)
-  var dataKanal = {};
+  const dataKanal = {};
   BANDS.forEach(function (band) {
     dataKanal[band.key] = new Float32Array(totalSampelPerKanal);
   });
 
   // Isi data kanal berdasarkan titik interval terdekat
-  var indeksTitik = 0;
-  for (var i = 0; i < totalSampelPerKanal; i++) {
-    var waktuTarget = i / sampelPerDetik;
+  let indeksTitik = 0;
+  for (let i = 0; i < totalSampelPerKanal; i++) {
+    const waktuTarget = i / sampelPerDetik;
     while (indeksTitik < titikTitik.length - 1 && titikTitik[indeksTitik + 1].detik <= waktuTarget) {
       indeksTitik++;
     }
-    var titik = titikTitik[indeksTitik];
+    const titik = titikTitik[indeksTitik];
     BANDS.forEach(function (band) {
       dataKanal[band.key][i] = titik ? titik[band.key] : 0;
     });
   }
 
   // Hitung ukuran header dan buffer biner
-  var panjangHeaderUtama = 256;
-  var panjangHeaderKanal = 256 * jumlahKanal;
-  var panjangTotalHeader = panjangHeaderUtama + panjangHeaderKanal;
-  var bytePerRekord = sampelPerDetik * 2 * jumlahKanal; // 2 byte per int16
-  var totalByteData = bytePerRekord * durasiDetik;
-  var bufferTotal = new ArrayBuffer(panjangTotalHeader + totalByteData);
-  var viewByte = new Uint8Array(bufferTotal);
-  var viewData = new DataView(bufferTotal);
+  const panjangHeaderUtama = 256;
+  const panjangHeaderKanal = 256 * jumlahKanal;
+  const panjangTotalHeader = panjangHeaderUtama + panjangHeaderKanal;
+  const bytePerRekord = sampelPerDetik * 2 * jumlahKanal; // 2 byte per int16
+  const totalByteData = bytePerRekord * durasiDetik;
+  const bufferTotal = new ArrayBuffer(panjangTotalHeader + totalByteData);
+  const viewByte = new Uint8Array(bufferTotal);
+  const viewData = new DataView(bufferTotal);
 
   // Helper untuk menulis teks ASCII dengan padding spasi ke buffer
   function tulisAscii(teks, posisi, panjang) {
-    var str = (teks || '').toString();
-    for (var j = 0; j < panjang; j++) {
+    const str = (teks || '').toString();
+    for (let j = 0; j < panjang; j++) {
       viewByte[posisi + j] = j < str.length ? str.charCodeAt(j) : 32; // 32 = spasi ASCII
     }
   }
 
-  var sekarang = new Date();
-  var tglStr = String(sekarang.getDate()).padStart(2, '0') + '.' +
+  const sekarang = new Date();
+  const tglStr = String(sekarang.getDate()).padStart(2, '0') + '.' +
                String(sekarang.getMonth() + 1).padStart(2, '0') + '.' +
                String(sekarang.getFullYear()).slice(-2);
-  var jamStr = String(sekarang.getHours()).padStart(2, '0') + '.' +
+  const jamStr = String(sekarang.getHours()).padStart(2, '0') + '.' +
                String(sekarang.getMinutes()).padStart(2, '0') + '.' +
                String(sekarang.getSeconds()).padStart(2, '0');
 
@@ -86,7 +86,7 @@ function buatFileEdf(namaPeserta, sesiLabel, titikTitik) {
 
   // --- 2. Header Kanal (256 bytes x 5 kanal) ---
   // Urutan penulisan field EDF berselang-seling per blok field, bukan per kanal:
-  var pos = panjangHeaderUtama;
+  let pos = panjangHeaderUtama;
 
   // Label kanal (16 bytes x 5)
   BANDS.forEach(function (band) {
@@ -107,8 +107,8 @@ function buatFileEdf(namaPeserta, sesiLabel, titikTitik) {
   });
 
   // Physical minimum (-100.0) (8 bytes x 5)
-  var physMin = -50.0;
-  var physMax = 150.0;
+  const physMin = -50.0;
+  const physMax = 150.0;
   BANDS.forEach(function () {
     tulisAscii(physMin.toFixed(1), pos, 8);
     pos += 8;
@@ -121,8 +121,8 @@ function buatFileEdf(namaPeserta, sesiLabel, titikTitik) {
   });
 
   // Digital minimum (-32768) (8 bytes x 5)
-  var digMin = -32768;
-  var digMax = 32767;
+  const digMin = -32768;
+  const digMax = 32767;
   BANDS.forEach(function () {
     tulisAscii(digMin.toString(), pos, 8);
     pos += 8;
@@ -153,16 +153,16 @@ function buatFileEdf(namaPeserta, sesiLabel, titikTitik) {
   });
 
   // --- 3. Data Records (16-bit signed integer per detik) ---
-  var offsetData = panjangTotalHeader;
-  for (var sec = 0; sec < durasiDetik; sec++) {
+  let offsetData = panjangTotalHeader;
+  for (let sec = 0; sec < durasiDetik; sec++) {
     BANDS.forEach(function (band) {
-      for (var s = 0; s < sampelPerDetik; s++) {
-        var idxSampel = sec * sampelPerDetik + s;
-        var valFloat = dataKanal[band.key][idxSampel] || 0;
+      for (let s = 0; s < sampelPerDetik; s++) {
+        const idxSampel = sec * sampelPerDetik + s;
+        const valFloat = dataKanal[band.key][idxSampel] || 0;
 
         // Konversi dari nilai fisik (float) ke nilai digital (16-bit int)
-        var valNorm = (valFloat - physMin) / (physMax - physMin);
-        var valInt = Math.round(valNorm * (digMax - digMin) + digMin);
+        const valNorm = (valFloat - physMin) / (physMax - physMin);
+        let valInt = Math.round(valNorm * (digMax - digMin) + digMin);
         if (valInt < digMin) valInt = digMin;
         if (valInt > digMax) valInt = digMax;
 
@@ -178,13 +178,13 @@ function buatFileEdf(namaPeserta, sesiLabel, titikTitik) {
 
 // Fungsi pembantu untuk memicu download file .EDF di browser
 function unduhEdf(namaPeserta, sesiLabel, titikTitik) {
-  var blob = buatFileEdf(namaPeserta, sesiLabel, titikTitik);
+  const blob = buatFileEdf(namaPeserta, sesiLabel, titikTitik);
   if (!blob) return;
 
-  var namaBersih = (namaPeserta || 'peserta').replace(/\s+/g, '_');
-  var namaFile = 'eeg_' + sesiLabel + '_' + namaBersih + '.edf';
+  const namaBersih = (namaPeserta || 'peserta').replace(/\s+/g, '_');
+  const namaFile = 'eeg_' + sesiLabel + '_' + namaBersih + '.edf';
 
-  var link = document.createElement('a');
+  const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = namaFile;
   document.body.appendChild(link);
