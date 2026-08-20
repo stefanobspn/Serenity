@@ -21,36 +21,58 @@ function tampilkanRingkasanKuesioner() {
     return;
   }
 
-  var baris = [];
-  if (hasil.pss5) {
-    baris.push('Stres (PSS-5): skor ' + hasil.pss5.skor + '/30 — ' + hasil.pss5.status);
-  }
-  if (hasil.sees10) {
-    baris.push('Emotional Eating (SEES-10): rata-rata ' + hasil.sees10.rataRata.toFixed(2) + ' — ' + hasil.sees10.status);
-  }
-  if (hasil.hunger) {
-    baris.push('Rasa Lapar: skor ' + hasil.hunger.skor + ' dari 10 (semakin rendah = semakin lapar)');
-  }
+  wadahEl.innerHTML = ''; // kosongkan dulu tulisan "Memuat..."
 
-  var daftarEl = document.createElement('ul');
-  baris.forEach(function (teks) {
-    var itemEl = document.createElement('li');
-    itemEl.textContent = teks;
-    daftarEl.appendChild(itemEl);
-  });
-
-  wadahEl.textContent = ''; // kosongkan dulu tulisan "Memuat..."
-
-  // Nama peserta (dari userform.html) ditampilkan terpisah dari daftar
-  // kuesioner di atas <ul>, bukan ikut jadi salah satu <li>, karena bukan
-  // hasil kuesioner.
   if (hasil.peserta && hasil.peserta.nama) {
-    var namaEl = document.createElement('p');
-    namaEl.textContent = 'Nama: ' + hasil.peserta.nama;
+    var namaEl = document.createElement('div');
+    namaEl.className = 'catatan';
+    namaEl.style.fontSize = '14px';
+    namaEl.style.fontWeight = '600';
+    namaEl.style.marginBottom = '12px';
+    namaEl.innerHTML = 'Nama Peserta: <span style="color: var(--color-primary);">' + hasil.peserta.nama + '</span>';
     wadahEl.appendChild(namaEl);
   }
 
-  wadahEl.appendChild(daftarEl);
+  var cardsGrid = document.createElement('div');
+  cardsGrid.className = 'summary-cards-grid';
+
+  if (hasil.pss5) {
+    var cardPss5 = document.createElement('div');
+    cardPss5.className = 'summary-card';
+    var isStresTinggi = hasil.pss5.status === 'TINGGI';
+    var badgeClass = isStresTinggi ? 'summary-badge-high' : 'summary-badge-low';
+    cardPss5.innerHTML = 
+      '<div class="summary-card-title">Tingkat Stres (PSS-5)</div>' +
+      '<div class="summary-card-value">Skor ' + hasil.pss5.skor + ' <small style="font-size: 13px; font-weight: normal; color: var(--color-text-muted);">/ 30</small></div>' +
+      '<div><span class="summary-card-badge ' + badgeClass + '">' + hasil.pss5.status + '</span></div>';
+    cardsGrid.appendChild(cardPss5);
+  }
+
+  if (hasil.sees10) {
+    var cardSees = document.createElement('div');
+    cardSees.className = 'summary-card';
+    var isOver = hasil.sees10.status.indexOf('OVER') !== -1;
+    var isUnder = hasil.sees10.status.indexOf('UNDER') !== -1;
+    var badgeSees = isOver ? 'summary-badge-high' : (isUnder ? 'summary-badge-mid' : 'summary-badge-low');
+    cardSees.innerHTML = 
+      '<div class="summary-card-title">Emotional Eating (SEES-10)</div>' +
+      '<div class="summary-card-value">Rata-rata ' + hasil.sees10.rataRata.toFixed(2) + ' <small style="font-size: 13px; font-weight: normal; color: var(--color-text-muted);">/ 5.0</small></div>' +
+      '<div><span class="summary-card-badge ' + badgeSees + '">' + hasil.sees10.status + '</span></div>';
+    cardsGrid.appendChild(cardSees);
+  }
+
+  if (hasil.hunger) {
+    var cardHunger = document.createElement('div');
+    cardHunger.className = 'summary-card';
+    var labelHunger = hasil.hunger.skor <= 3 ? 'Sangat Lapar' : (hasil.hunger.skor <= 6 ? 'Netral / Cukup' : 'Kenyang');
+    cardHunger.innerHTML = 
+      '<div class="summary-card-title">Skala Rasa Lapar</div>' +
+      '<div class="summary-card-value">Skor ' + hasil.hunger.skor + ' <small style="font-size: 13px; font-weight: normal; color: var(--color-text-muted);">/ 10</small></div>' +
+      '<div><span class="summary-card-badge summary-badge-info">' + labelHunger + '</span></div>';
+    cardsGrid.appendChild(cardHunger);
+  }
+
+  wadahEl.appendChild(cardsGrid);
 }
 
 

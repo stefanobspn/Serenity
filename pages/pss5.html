@@ -1,78 +1,119 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kuesioner PSS-5</title>
+    <title>Kuesioner Stres (PSS-5) — Serenity</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
+
 <body>
+    <div class="nav-header">
+        <a class="link-kembali" href="userform.html">&larr; Kembali ke Data Peserta</a>
+        <span class="langkah-badge">Langkah 2 dari 5</span>
+    </div>
+
+    <div class="stepper-container">
+        <ol class="stepper">
+            <li class="stepper-item completed">
+                <span class="stepper-circle">&check;</span>
+                <span class="stepper-text">Identitas</span>
+            </li>
+            <li class="stepper-item active">
+                <span class="stepper-circle">2</span>
+                <span class="stepper-text">PSS-5</span>
+            </li>
+            <li class="stepper-item">
+                <span class="stepper-circle">3</span>
+                <span class="stepper-text">SEES-10</span>
+            </li>
+            <li class="stepper-item">
+                <span class="stepper-circle">4</span>
+                <span class="stepper-text">Lapar</span>
+            </li>
+            <li class="stepper-item">
+                <span class="stepper-circle">5</span>
+                <span class="stepper-text">EEG</span>
+            </li>
+        </ol>
+    </div>
+
     <header>
         <h1>Kuesioner Tingkat Stres (PSS-5)</h1>
+        <p>Pilih salah satu angka (1–6) yang paling mencerminkan kondisi perasaan Anda saat ini.</p>
     </header>
 
     <main>
-        <a class="link-kembali" href="userform.html">&larr; Kembali</a>
-        <p class="langkah">Langkah 2 dari 5</p>
-
-        <p>Pilih jawaban yang paling sesuai dengan kondisi kamu saat ini.</p>
+        <div id="pesanValidasi" class="alert-error" hidden></div>
 
         <form id="formPss5">
-            <fieldset>
-                <legend>1. Bagaimana keceriaan kamu saat ini?</legend>
-                <label><input type="radio" name="q1" value="1">1 - Sangat rendah</label>
-                <label><input type="radio" name="q1" value="2">2 - Rendah</label>
-                <label><input type="radio" name="q1" value="3">3 - Sedikit rendah</label>
-                <label><input type="radio" name="q1" value="4">4 - Sedikit tinggi</label>
-                <label><input type="radio" name="q1" value="5">5 - Tinggi</label>
-                <label><input type="radio" name="q1" value="6">6 - Sangat tinggi</label>
+            <fieldset id="field-q1">
+                <legend>1. Bagaimana keceriaan Anda saat ini?</legend>
+                <div class="radio-group">
+                    <label class="radio-card"><input type="radio" name="q1" value="1"> 1 - Sangat rendah</label>
+                    <label class="radio-card"><input type="radio" name="q1" value="2"> 2 - Rendah</label>
+                    <label class="radio-card"><input type="radio" name="q1" value="3"> 3 - Sedikit rendah</label>
+                    <label class="radio-card"><input type="radio" name="q1" value="4"> 4 - Sedikit tinggi</label>
+                    <label class="radio-card"><input type="radio" name="q1" value="5"> 5 - Tinggi</label>
+                    <label class="radio-card"><input type="radio" name="q1" value="6"> 6 - Sangat tinggi</label>
+                </div>
             </fieldset>
 
-            <fieldset>
-                <legend>2. Bagaimana kebahagiaan kamu saat ini?</legend>
-                <label><input type="radio" name="q2" value="1">1 - Sangat rendah</label>
-                <label><input type="radio" name="q2" value="2">2 - Rendah</label>
-                <label><input type="radio" name="q2" value="3">3 - Sedikit rendah</label>
-                <label><input type="radio" name="q2" value="4">4 - Sedikit tinggi</label>
-                <label><input type="radio" name="q2" value="5">5 - Tinggi</label>
-                <label><input type="radio" name="q2" value="6">6 - Sangat tinggi</label>
+            <fieldset id="field-q2">
+                <legend>2. Bagaimana kebahagiaan Anda saat ini?</legend>
+                <div class="radio-group">
+                    <label class="radio-card"><input type="radio" name="q2" value="1"> 1 - Sangat rendah</label>
+                    <label class="radio-card"><input type="radio" name="q2" value="2"> 2 - Rendah</label>
+                    <label class="radio-card"><input type="radio" name="q2" value="3"> 3 - Sedikit rendah</label>
+                    <label class="radio-card"><input type="radio" name="q2" value="4"> 4 - Sedikit tinggi</label>
+                    <label class="radio-card"><input type="radio" name="q2" value="5"> 5 - Tinggi</label>
+                    <label class="radio-card"><input type="radio" name="q2" value="6"> 6 - Sangat tinggi</label>
+                </div>
             </fieldset>
 
-            <fieldset>
-                <legend>3. Bagaimana rasa marah/frustasi kamu saat ini?</legend>
-                <label><input type="radio" name="q3" value="1">1 - Sangat rendah</label>
-                <label><input type="radio" name="q3" value="2">2 - Rendah</label>
-                <label><input type="radio" name="q3" value="3">3 - Sedikit rendah</label>
-                <label><input type="radio" name="q3" value="4">4 - Sedikit tinggi</label>
-                <label><input type="radio" name="q3" value="5">5 - Tinggi</label>
-                <label><input type="radio" name="q3" value="6">6 - Sangat tinggi</label>
+            <fieldset id="field-q3">
+                <legend>3. Bagaimana rasa marah / frustasi Anda saat ini?</legend>
+                <div class="radio-group">
+                    <label class="radio-card"><input type="radio" name="q3" value="1"> 1 - Sangat rendah</label>
+                    <label class="radio-card"><input type="radio" name="q3" value="2"> 2 - Rendah</label>
+                    <label class="radio-card"><input type="radio" name="q3" value="3"> 3 - Sedikit rendah</label>
+                    <label class="radio-card"><input type="radio" name="q3" value="4"> 4 - Sedikit tinggi</label>
+                    <label class="radio-card"><input type="radio" name="q3" value="5"> 5 - Tinggi</label>
+                    <label class="radio-card"><input type="radio" name="q3" value="6"> 6 - Sangat tinggi</label>
+                </div>
             </fieldset>
 
-            <fieldset>
-                <legend>4. Bagaimana rasa cemas/stres kamu saat ini?</legend>
-                <label><input type="radio" name="q4" value="1">1 - Sangat rendah</label>
-                <label><input type="radio" name="q4" value="2">2 - Rendah</label>
-                <label><input type="radio" name="q4" value="3">3 - Sedikit rendah</label>
-                <label><input type="radio" name="q4" value="4">4 - Sedikit tinggi</label>
-                <label><input type="radio" name="q4" value="5">5 - Tinggi</label>
-                <label><input type="radio" name="q4" value="6">6 - Sangat tinggi</label>
+            <fieldset id="field-q4">
+                <legend>4. Bagaimana rasa cemas / stres Anda saat ini?</legend>
+                <div class="radio-group">
+                    <label class="radio-card"><input type="radio" name="q4" value="1"> 1 - Sangat rendah</label>
+                    <label class="radio-card"><input type="radio" name="q4" value="2"> 2 - Rendah</label>
+                    <label class="radio-card"><input type="radio" name="q4" value="3"> 3 - Sedikit rendah</label>
+                    <label class="radio-card"><input type="radio" name="q4" value="4"> 4 - Sedikit tinggi</label>
+                    <label class="radio-card"><input type="radio" name="q4" value="5"> 5 - Tinggi</label>
+                    <label class="radio-card"><input type="radio" name="q4" value="6"> 6 - Sangat tinggi</label>
+                </div>
             </fieldset>
 
-            <fieldset>
-                <legend>5. Bagaimana rasa sedih kamu saat ini?</legend>
-                <label><input type="radio" name="q5" value="1">1 - Sangat rendah</label>
-                <label><input type="radio" name="q5" value="2">2 - Rendah</label>
-                <label><input type="radio" name="q5" value="3">3 - Sedikit rendah</label>
-                <label><input type="radio" name="q5" value="4">4 - Sedikit tinggi</label>
-                <label><input type="radio" name="q5" value="5">5 - Tinggi</label>
-                <label><input type="radio" name="q5" value="6">6 - Sangat tinggi</label>
+            <fieldset id="field-q5">
+                <legend>5. Bagaimana rasa sedih Anda saat ini?</legend>
+                <div class="radio-group">
+                    <label class="radio-card"><input type="radio" name="q5" value="1"> 1 - Sangat rendah</label>
+                    <label class="radio-card"><input type="radio" name="q5" value="2"> 2 - Rendah</label>
+                    <label class="radio-card"><input type="radio" name="q5" value="3"> 3 - Sedikit rendah</label>
+                    <label class="radio-card"><input type="radio" name="q5" value="4"> 4 - Sedikit tinggi</label>
+                    <label class="radio-card"><input type="radio" name="q5" value="5"> 5 - Tinggi</label>
+                    <label class="radio-card"><input type="radio" name="q5" value="6"> 6 - Sangat tinggi</label>
+                </div>
             </fieldset>
 
-            <button class="btn-lanjut">Lanjut</button>
+            <button type="submit" class="btn-lanjut">Lanjut ke Kuesioner Makan (SEES-10) &rarr;</button>
         </form>
     </main>
 
     <script src="../js/storage.js"></script>
     <script src="../js/pss5.js"></script>
 </body>
+
 </html>

@@ -1,118 +1,164 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kuesioner SEES-10</title>
+    <title>Kuesioner Emotional Eating (SEES-10) — Serenity</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 
 <body>
+    <div class="nav-header">
+        <a class="link-kembali" href="pss5.html">&larr; Kembali ke Kuesioner PSS-5</a>
+        <span class="langkah-badge">Langkah 3 dari 5</span>
+    </div>
+
+    <div class="stepper-container">
+        <ol class="stepper">
+            <li class="stepper-item completed">
+                <span class="stepper-circle">&check;</span>
+                <span class="stepper-text">Identitas</span>
+            </li>
+            <li class="stepper-item completed">
+                <span class="stepper-circle">&check;</span>
+                <span class="stepper-text">PSS-5</span>
+            </li>
+            <li class="stepper-item active">
+                <span class="stepper-circle">3</span>
+                <span class="stepper-text">SEES-10</span>
+            </li>
+            <li class="stepper-item">
+                <span class="stepper-circle">4</span>
+                <span class="stepper-text">Lapar</span>
+            </li>
+            <li class="stepper-item">
+                <span class="stepper-circle">5</span>
+                <span class="stepper-text">EEG</span>
+            </li>
+        </ol>
+    </div>
+
     <header>
         <h1>Kuesioner Emotional Eating (SEES-10)</h1>
+        <p>Pilih pilihan (1–5) yang paling sesuai dengan kebiasaan makan Anda saat mengalami situasi di bawah ini.</p>
     </header>
 
     <main>
-        <a class="link-kembali" href="pss5.html">&larr; Kembali ke Beranda</a>
-        <p class="langkah">Langkah 3 dari 5</p>
-
-        <p>Pilih jawaban yang paling sesuai dengan kondisi kamu saat ini.</p>
+        <div id="pesanValidasi" class="alert-error" hidden></div>
 
         <form id="formSees10">
-            <fieldset>
-                <legend>1. Ketika saya kewalahan/beban tugas banyak, maka saya harus...</legend>
-                <label><input type="radio" name="q1" value="1">1 - Makan sangat lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q1" value="2">2 - Makan lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q1" value="3">3 - Makan seperti biasanya</label>
-                <label><input type="radio" name="q1" value="4">4 - Makan lebih banyak dari biasanya</label>
-                <label><input type="radio" name="q1" value="5">5 - Makan sangat lebih banyak dari biasanya</label>
+            <fieldset id="field-q1">
+                <legend>1. Ketika saya kewalahan / beban tugas banyak, maka saya...</legend>
+                <div class="radio-group">
+                    <label class="radio-card"><input type="radio" name="q1" value="1"> 1 - Makan sangat lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q1" value="2"> 2 - Makan lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q1" value="3"> 3 - Makan seperti biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q1" value="4"> 4 - Makan lebih banyak dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q1" value="5"> 5 - Makan sangat lebih banyak dari biasanya</label>
+                </div>
             </fieldset>
 
-            <fieldset>
-                <legend>2. Pada saat sangat stress, saya...</legend>
-                <label><input type="radio" name="q2" value="1">1 - Makan sangat lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q2" value="2">2 - Makan lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q2" value="3">3 - Makan seperti biasanya</label>
-                <label><input type="radio" name="q2" value="4">4 - Makan lebih banyak dari biasanya</label>
-                <label><input type="radio" name="q2" value="5">5 - Makan sangat lebih banyak dari biasanya</label>
+            <fieldset id="field-q2">
+                <legend>2. Pada saat sangat stres, saya...</legend>
+                <div class="radio-group">
+                    <label class="radio-card"><input type="radio" name="q2" value="1"> 1 - Makan sangat lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q2" value="2"> 2 - Makan lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q2" value="3"> 3 - Makan seperti biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q2" value="4"> 4 - Makan lebih banyak dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q2" value="5"> 5 - Makan sangat lebih banyak dari biasanya</label>
+                </div>
             </fieldset>
 
-            <fieldset>
-                <legend>3. Ketika saya merasa keadaan diluar kendali, saya...</legend>
-                <label><input type="radio" name="q3" value="1">1 - Makan sangat lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q3" value="2">2 - Makan lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q3" value="3">3 - Makan seperti biasanya</label>
-                <label><input type="radio" name="q3" value="4">4 - Makan lebih banyak dari biasanya</label>
-                <label><input type="radio" name="q3" value="5">5 - Makan sangat lebih banyak dari biasanya</label>
+            <fieldset id="field-q3">
+                <legend>3. Ketika saya merasa keadaan di luar kendali, saya...</legend>
+                <div class="radio-group">
+                    <label class="radio-card"><input type="radio" name="q3" value="1"> 1 - Makan sangat lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q3" value="2"> 2 - Makan lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q3" value="3"> 3 - Makan seperti biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q3" value="4"> 4 - Makan lebih banyak dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q3" value="5"> 5 - Makan sangat lebih banyak dari biasanya</label>
+                </div>
             </fieldset>
 
-            <fieldset>
+            <fieldset id="field-q4">
                 <legend>4. Pada saat semua hal berjalan tidak sesuai harapan...</legend>
-                <label><input type="radio" name="q4" value="1">1 - Makan sangat lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q4" value="2">2 - Makan lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q4" value="3">3 - Makan seperti biasanya</label>
-                <label><input type="radio" name="q4" value="4">4 - Makan lebih banyak dari biasanya</label>
-                <label><input type="radio" name="q4" value="5">5 - Makan sangat lebih banyak dari biasanya</label>
+                <div class="radio-group">
+                    <label class="radio-card"><input type="radio" name="q4" value="1"> 1 - Makan sangat lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q4" value="2"> 2 - Makan lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q4" value="3"> 3 - Makan seperti biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q4" value="4"> 4 - Makan lebih banyak dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q4" value="5"> 5 - Makan sangat lebih banyak dari biasanya</label>
+                </div>
             </fieldset>
 
-            <fieldset>
+            <fieldset id="field-q5">
                 <legend>5. Pada saat mempersiapkan tugas berat, saya...</legend>
-                <label><input type="radio" name="q5" value="1">1 - Makan sangat lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q5" value="2">2 - Makan lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q5" value="3">3 - Makan seperti biasanya</label>
-                <label><input type="radio" name="q5" value="4">4 - Makan lebih banyak dari biasanya</label>
-                <label><input type="radio" name="q5" value="5">5 - Makan sangat lebih banyak dari biasanya</label>
+                <div class="radio-group">
+                    <label class="radio-card"><input type="radio" name="q5" value="1"> 1 - Makan sangat lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q5" value="2"> 2 - Makan lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q5" value="3"> 3 - Makan seperti biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q5" value="4"> 4 - Makan lebih banyak dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q5" value="5"> 5 - Makan sangat lebih banyak dari biasanya</label>
+                </div>
             </fieldset>
 
-            <fieldset>
-                <legend>6. Ketika saya dibawah tekanan, saya...</legend>
-                <label><input type="radio" name="q6" value="1">1 - Makan sangat lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q6" value="2">2 - Makan lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q6" value="3">3 - Makan seperti biasanya</label>
-                <label><input type="radio" name="q6" value="4">4 - Makan lebih banyak dari biasanya</label>
-                <label><input type="radio" name="q6" value="5">5 - Makan sangat lebih banyak dari biasanya</label>
+            <fieldset id="field-q6">
+                <legend>6. Ketika saya di bawah tekanan, saya...</legend>
+                <div class="radio-group">
+                    <label class="radio-card"><input type="radio" name="q6" value="1"> 1 - Makan sangat lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q6" value="2"> 2 - Makan lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q6" value="3"> 3 - Makan seperti biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q6" value="4"> 4 - Makan lebih banyak dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q6" value="5"> 5 - Makan sangat lebih banyak dari biasanya</label>
+                </div>
             </fieldset>
 
-            <fieldset>
-                <legend>7. Ketika saya merasa cemas dan stress, saya...</legend>
-                <label><input type="radio" name="q7" value="1">1 - Makan sangat lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q7" value="2">2 - Makan lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q7" value="3">3 - Makan seperti biasanya</label>
-                <label><input type="radio" name="q7" value="4">4 - Makan lebih banyak dari biasanya</label>
-                <label><input type="radio" name="q7" value="5">5 - Makan sangat lebih banyak dari biasanya</label>
+            <fieldset id="field-q7">
+                <legend>7. Ketika saya merasa cemas dan stres, saya...</legend>
+                <div class="radio-group">
+                    <label class="radio-card"><input type="radio" name="q7" value="1"> 1 - Makan sangat lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q7" value="2"> 2 - Makan lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q7" value="3"> 3 - Makan seperti biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q7" value="4"> 4 - Makan lebih banyak dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q7" value="5"> 5 - Makan sangat lebih banyak dari biasanya</label>
+                </div>
             </fieldset>
 
-            <fieldset>
-                <legend>8. Ketika merasa tidak memiliki pengaruh/tidak bisa berperan atas hal-hal penting dalam hidupku, saya...</legend>
-                <label><input type="radio" name="q8" value="1">1 - Makan sangat lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q8" value="2">2 - Makan lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q8" value="3">3 - Makan seperti biasanya</label>
-                <label><input type="radio" name="q8" value="4">4 - Makan lebih banyak dari biasanya</label>
-                <label><input type="radio" name="q8" value="5">5 - Makan sangat lebih banyak dari biasanya</label>
+            <fieldset id="field-q8">
+                <legend>8. Ketika merasa tidak memiliki pengaruh atas hal-hal penting dalam hidupku, saya...</legend>
+                <div class="radio-group">
+                    <label class="radio-card"><input type="radio" name="q8" value="1"> 1 - Makan sangat lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q8" value="2"> 2 - Makan lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q8" value="3"> 3 - Makan seperti biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q8" value="4"> 4 - Makan lebih banyak dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q8" value="5"> 5 - Makan sangat lebih banyak dari biasanya</label>
+                </div>
             </fieldset>
 
-            <fieldset>
-                <legend>9. Ketika saya merasa tidak menguasa keadaan, saya...</legend>
-                <label><input type="radio" name="q9" value="1">1 - Makan sangat lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q9" value="2">2 - Makan lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q9" value="3">3 - Makan seperti biasanya</label>
-                <label><input type="radio" name="q9" value="4">4 - Makan lebih banyak dari biasanya</label>
-                <label><input type="radio" name="q9" value="5">5 - Makan sangat lebih banyak dari biasanya</label>
+            <fieldset id="field-q9">
+                <legend>9. Ketika saya merasa tidak menguasai keadaan, saya...</legend>
+                <div class="radio-group">
+                    <label class="radio-card"><input type="radio" name="q9" value="1"> 1 - Makan sangat lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q9" value="2"> 2 - Makan lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q9" value="3"> 3 - Makan seperti biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q9" value="4"> 4 - Makan lebih banyak dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q9" value="5"> 5 - Makan sangat lebih banyak dari biasanya</label>
+                </div>
             </fieldset>
 
-            <fieldset>
-                <legend>10. Ketika saya merasa kesulitan telah menumpuk begitu tinggi sehingga saya tidak dapat mengatasinya, saya...</legend>
-                <label><input type="radio" name="q10" value="1">1 - Makan sangat lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q10" value="2">2 - Makan lebih sedikit dari biasanya</label>
-                <label><input type="radio" name="q10" value="3">3 - Makan seperti biasanya</label>
-                <label><input type="radio" name="q10" value="4">4 - Makan lebih banyak dari biasanya</label>
-                <label><input type="radio" name="q10" value="5">5 - Makan sangat lebih banyak dari biasanya</label>
+            <fieldset id="field-q10">
+                <legend>10. Ketika saya merasa kesulitan telah menumpuk sehingga sulit diatasi, saya...</legend>
+                <div class="radio-group">
+                    <label class="radio-card"><input type="radio" name="q10" value="1"> 1 - Makan sangat lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q10" value="2"> 2 - Makan lebih sedikit dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q10" value="3"> 3 - Makan seperti biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q10" value="4"> 4 - Makan lebih banyak dari biasanya</label>
+                    <label class="radio-card"><input type="radio" name="q10" value="5"> 5 - Makan sangat lebih banyak dari biasanya</label>
+                </div>
             </fieldset>
 
-
-
-            <button class="btn-lanjut">Lanjut</button>
+            <button type="submit" class="btn-lanjut">Lanjut ke Skala Rasa Lapar &rarr;</button>
         </form>
     </main>
 

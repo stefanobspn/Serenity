@@ -1,57 +1,82 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EEG Monitor</title>
+    <title>Monitoring EEG — Serenity</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 
 <body>
+    <div class="nav-header">
+        <a href="hungerscale.html" class="link-kembali">&larr; Kembali ke Skala Lapar</a>
+        <span class="langkah-badge">Langkah 5 dari 5</span>
+    </div>
+
+    <div class="stepper-container">
+        <ol class="stepper">
+            <li class="stepper-item completed">
+                <span class="stepper-circle">&check;</span>
+                <span class="stepper-text">Identitas</span>
+            </li>
+            <li class="stepper-item completed">
+                <span class="stepper-circle">&check;</span>
+                <span class="stepper-text">PSS-5</span>
+            </li>
+            <li class="stepper-item completed">
+                <span class="stepper-circle">&check;</span>
+                <span class="stepper-text">SEES-10</span>
+            </li>
+            <li class="stepper-item completed">
+                <span class="stepper-circle">&check;</span>
+                <span class="stepper-text">Lapar</span>
+            </li>
+            <li class="stepper-item active">
+                <span class="stepper-circle">5</span>
+                <span class="stepper-text">EEG</span>
+            </li>
+        </ol>
+    </div>
+
     <header>
-        <h1>EEG Monitor</h1>
+        <h1>Monitoring & Perekaman EEG</h1>
+        <p>Pantau kualitas kontak sensor elektroda dan rekam gelombang otak secara real-time.</p>
     </header>
 
     <main>
-        <a href="hungerscale.html" class="link-kembali">&larr; Kembali</a>
-        <p class="langkah">Langkah 5 dari 5</p>
-
         <section>
-            <h2>Koneksi</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                <h2>Koneksi Headset</h2>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <div id="statusPill" class="status-pill">
+                        <span class="dot-pulse"></span>
+                        <span id="status">Status: belum terhubung</span>
+                    </div>
+                    <span id="battery" class="status-pill">Battery -</span>
+                    <button id="demoBtn" class="btn-dummy">Demo (Data Dummy)</button>
+                </div>
+            </div>
 
-            <!-- Tidak ada tombol "sambungkan" di sini: halaman menyambung sendiri
-                 begitu dibuka, dan menyambung ulang sendiri kalau sempat putus.
-                 Kalau benar-benar mentok, muat ulang halaman (F5). -->
-            <button id="demoBtn" class="btn-dummy">Demo (Data Dummy)</button>
-
-            <p class="catatan">Tombol "Demo" cuma buat development/testing waktu belum ada
-                headset fisik. Akan mengisi status &amp; band power pakai angka
-                acak, BUKAN data EEG asli.</p>
-            <p id="status">Status: belum terhubung</p>
-            <!-- Bukti bahwa paket dari HP pernah sampai. Sengaja terpisah dari
-                 status di atas, karena yang ini catatan yang menetap. -->
+            <p class="catatan">Aplikasi otomatis menyambung ke bridge stream. Gunakan tombol "Demo" jika sedang menguji tanpa perangkat fisik headset.</p>
             <p id="jejakJaringan" class="catatan" hidden></p>
-            <p id="battery">Battery -</p>
         </section>
 
         <section>
-            <h2>Kualitas Sinyal</h2>
-            <p class="catatan">Menunjukkan seberapa baik tiap elektroda menempel di kulit kepala.</p>
+            <h2>Kualitas Kontak Elektroda (Signal Quality)</h2>
+            <p class="catatan">Menunjukkan seberapa baik tiap elektroda menempel di kulit kepala. Pastikan seluruh elektroda berstatus hijau/bagus sebelum merekam.</p>
 
-            <ul id="kualitas" class="kualitas-list">
+            <ul id="kualitas" class="kualitas-list" aria-live="polite">
                 <li>Kualitas sinyal: belum ada data</li>
             </ul>
 
             <p id="kualitasPeringatan" class="peringatan" hidden>
-                Ada elektroda yang belum menempel dengan baik. Rapikan posisi headset
-                (dan singkirkan rambut yang terjepit di bawah elektroda) sampai semuanya
-                "bagus", baru mulai merekam.
+                Ada elektroda yang belum menempel dengan baik. Rapikan posisi headband dan singkirkan rambut yang terjepit sampai berstatus "bagus".
             </p>
 
-            <label class="catatan">
+            <label class="catatan" style="display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer;">
                 <input type="checkbox" id="abaikanKualitas">
-                Rekam saja walaupun ada elektroda yang jelek
+                Rekam saja walaupun ada elektroda yang belum optimal
             </label>
         </section>
 
@@ -59,62 +84,56 @@
             <h2>Gelombang Otak (Band Power)</h2>
             <ul id="bands" class="bands-list">
                 <li class="card band-delta">
-                    <span class="label">Delta <small>0.5-4Hz</small></span>
+                    <span class="label">Delta <small>0.5–4Hz</small></span>
                     <span class="value" id="band-delta">-</span>
-
                 </li>
-
                 <li class="card band-theta">
-                    <span class="label">Theta <small>4-8Hz</small></span>
+                    <span class="label">Theta <small>4–8Hz</small></span>
                     <span class="value" id="band-theta">-</span>
                 </li>
-
                 <li class="card band-alpha">
-                    <span class="label">Alpha <small>8-13Hz</small></span>
+                    <span class="label">Alpha <small>8–13Hz</small></span>
                     <span class="value" id="band-alpha">-</span>
                 </li>
-
                 <li class="card band-beta">
-                    <span class="label">Beta <small>13-30Hz</small></span>
+                    <span class="label">Beta <small>13–30Hz</small></span>
                     <span class="value" id="band-beta">-</span>
                 </li>
-
                 <li class="card band-gamma">
-                    <span class="label">Gamma <small>30-100Hz</small></span>
+                    <span class="label">Gamma <small>30–100Hz</small></span>
                     <span class="value" id="band-gamma">-</span>
-
                 </li>
             </ul>
         </section>
 
         <section>
-            <h2>Grafik Band Power EEG</h2>
+            <h2>Grafik Live Band Power EEG</h2>
             <figure>
                 <canvas id="eegChart" width="900" height="320"></canvas>
             </figure>
         </section>
 
         <section>
-            <h2 id="rekamHeading">Rekam Data — EEG 1 </h2>
-            <p id="rekamInstruksi" class="catatan">Pastikan data sudah mengalir dan band power sudah muncul di
-                atas, baru tekan tombol ini. Tekan "Stop Rekam" kapan saja untuk
-                menyelesaikan sesi ini.</p>
+            <h2 id="rekamHeading">Rekam Data — EEG 1 (Baseline)</h2>
+            <p id="rekamInstruksi" class="catatan">Pastikan data sudah mengalir dan band power sudah muncul di atas, baru tekan tombol ini. Tekan "Stop Rekam" kapan saja untuk menyelesaikan sesi ini.</p>
 
-            <label class="catatan" id="wadahLewatiAwal">
-                <input type="checkbox" id="lewatiAwal" checked>
-                Buang 30 detik pertama (masa tenang)
-            </label>
-            <p class="catatan" id="penjelasanLewatiAwal">Detik-detik awal rekaman baseline biasanya belum stabil — peserta
-                masih membetulkan posisi duduk, dan elektroda baru menyesuaikan diri.
-                Dengan pilihan ini dinyalakan, aplikasi menunggu dulu 30 detik sebelum
-                benar-benar mulai mengumpulkan data.</p>
+            <div id="wadahLewatiAwal" style="margin-bottom: 8px;">
+                <label class="catatan" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="lewatiAwal" checked>
+                    Sertakan 30 detik masa tenang awal (stabilisasi posisi duduk & elektroda)
+                </label>
+                <p class="catatan" id="penjelasanLewatiAwal">Detik awal rekaman baseline digunakan untuk adaptasi peserta dan elektroda sebelum data aktif dihitung.</p>
+            </div>
 
-            <button id="recordBtn" class="btn-rekam">Mulai Rekam</button>
-            <button id="stopRecordBtn" class="btn-rekam" hidden>Stop Rekam</button>
-            <p id="recordStatus"></p>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px;">
+                <button id="recordBtn" class="btn-rekam">Mulai Rekam</button>
+                <button id="stopRecordBtn" class="btn-rekam btn-rekam-stop" hidden>Stop Rekam</button>
+            </div>
+
+            <div id="recordStatusWrapper" style="margin-top: 10px;" hidden>
+                <p id="recordStatus" class="catatan" aria-live="polite" style="font-weight: 500;"></p>
+            </div>
         </section>
-
-
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>

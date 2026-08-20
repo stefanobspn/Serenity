@@ -1,33 +1,59 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Peserta</title>
+    <title>Data Peserta — Serenity</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 
 <body>
+    <div class="nav-header">
+        <a class="link-kembali" href="../index.html">&larr; Kembali ke Beranda</a>
+        <span class="langkah-badge">Langkah 1 dari 5</span>
+    </div>
+
+    <div class="stepper-container">
+        <ol class="stepper">
+            <li class="stepper-item active">
+                <span class="stepper-circle">1</span>
+                <span class="stepper-text">Identitas</span>
+            </li>
+            <li class="stepper-item">
+                <span class="stepper-circle">2</span>
+                <span class="stepper-text">PSS-5</span>
+            </li>
+            <li class="stepper-item">
+                <span class="stepper-circle">3</span>
+                <span class="stepper-text">SEES-10</span>
+            </li>
+            <li class="stepper-item">
+                <span class="stepper-circle">4</span>
+                <span class="stepper-text">Lapar</span>
+            </li>
+            <li class="stepper-item">
+                <span class="stepper-circle">5</span>
+                <span class="stepper-text">EEG</span>
+            </li>
+        </ol>
+    </div>
+
     <header>
-        <h1>Isi namamu</h1>
+        <h1>Data Peserta Penelitian</h1>
+        <p>Sebelum mengisi kuesioner dan merekam gelombang otak, silakan isi nama atau inisial Anda.</p>
     </header>
 
     <main>
-        <a class="link-kembali" href="../index.html">&larr; Kembali ke Beranda</a>
-        <p class="langkah">Langkah 1 dari 5</p>
-
-        <p>Sebelum mengisi kuesioner, isi dulu nama kamu.</p>
-
         <form id="formUser">
             <fieldset>
                 <legend>Nama Lengkap</legend>
-                <label>Nama
-                    <input type="text" id="inputNama" name="nama" required>
-                </label>
+                <div class="form-group">
+                    <input type="text" id="inputNama" name="nama" class="input-text" placeholder="Contoh: Naura Kayana" required autofocus>
+                </div>
             </fieldset>
 
-            <button class="btn-lanjut">Lanjut</button>
+            <button type="submit" class="btn-lanjut">Lanjut ke Kuesioner Stres (PSS-5) &rarr;</button>
         </form>
     </main>
 

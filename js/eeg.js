@@ -65,11 +65,13 @@ var NAMA_ELEKTRODA = ['TP9 (kiri belakang)', 'AF7 (kiri depan)', 'AF8 (kanan dep
 
 // --- Ambil elemen-elemen HTML yang isinya akan kita ubah lewat JS ---
 var statusEl = document.getElementById('status');
+var statusPillEl = document.getElementById('statusPill');
 var jejakJaringanEl = document.getElementById('jejakJaringan');
 var batteryEl = document.getElementById('battery');
 var recordBtn = document.getElementById('recordBtn');
 var stopRecordBtn = document.getElementById('stopRecordBtn');
 var recordStatusEl = document.getElementById('recordStatus');
+var recordStatusWrapperEl = document.getElementById('recordStatusWrapper');
 var demoBtn = document.getElementById('demoBtn');
 var rekamHeadingEl = document.getElementById('rekamHeading');
 var rekamInstruksiEl = document.getElementById('rekamInstruksi');
@@ -364,14 +366,21 @@ function mulaiRekam() {
 
 // Satu tempat untuk tulisan status di bawah tombol rekam, supaya kalimat
 // masa tenang dan kalimat sedang-merekam tidak ditulis ulang di banyak tempat
-// lalu lama-lama jadi tidak konsisten.
+// lalu lama-lama jadi tidak konsisten, sekaligus mengatur tampil/sembunyinya #recordStatusWrapper.
+function tampilkanStatusRekam(teks) {
+  recordStatusEl.textContent = teks || '';
+  if (recordStatusWrapperEl) {
+    recordStatusWrapperEl.hidden = !teks;
+  }
+}
+
 function perbaruiStatusRekam() {
   if (sisaMasaTenang > 0) {
-    recordStatusEl.textContent = 'Masa tenang... ' + sisaMasaTenang +
-      ' detik lagi sebelum perekaman dimulai. Duduk santai dulu.';
+    tampilkanStatusRekam('Masa tenang... ' + sisaMasaTenang +
+      ' detik lagi sebelum perekaman dimulai. Duduk santai dulu.');
     return;
   }
-  recordStatusEl.textContent = 'Merekam... ' + waktuBerjalanDetik + ' detik berjalan';
+  tampilkanStatusRekam('Merekam... ' + waktuBerjalanDetik + ' detik berjalan');
 }
 recordBtn.addEventListener('click', mulaiRekam);
 
@@ -393,7 +402,7 @@ function selesaiRekam() {
      terkumpul, jadi ini diperlakukan sebagai BATAL, bukan sebagai sesi kosong. */
   if (sisaMasaTenang > 0) {
     sisaMasaTenang = 0;
-    recordStatusEl.textContent = 'Perekaman dibatalkan — masa tenang belum selesai, belum ada data yang terkumpul.';
+    tampilkanStatusRekam('Perekaman dibatalkan — masa tenang belum selesai, belum ada data yang terkumpul.');
     recordBtn.disabled = !bolehMulaiRekam();
     return;
   }
@@ -432,7 +441,7 @@ function selesaiRekam() {
     tahapEeg = 2;
     tampilkanTahapEeg();
     recordBtn.disabled = !bolehMulaiRekam();
-    recordStatusEl.textContent = 'EEG 1 selesai direkam.';
+    tampilkanStatusRekam('EEG 1 selesai direkam.');
   } else {
     simpanHasilKuesioner('eeg2', hasilEeg);
     window.location.href = 'hasilakhir.html';
@@ -452,6 +461,9 @@ function handleStatusChange(text, state) {
   // Tandai secara visual (bukan cuma lewat teks) kalau statusnya error,
   // supaya kelihatan beda dari status biasa seperti "menghubungkan..."
   statusEl.classList.toggle('status-error', state === 'error');
+  if (statusPillEl) {
+    statusPillEl.className = 'status-pill status-' + (state || 'disconnected');
+  }
 
   // Tombol rekam cuma boleh ditekan kalau data sedang mengalir, sinyalnya
   // layak, dan tidak sedang merekam (lihat bolehMulaiRekam).
@@ -551,7 +563,7 @@ function kosongkanTampilan() {
     clearInterval(timerRekam);
     sedangMerekam = false;
     stopRecordBtn.hidden = true;
-    recordStatusEl.textContent = 'Rekaman dibatalkan karena aliran data terputus.';
+    tampilkanStatusRekam('Rekaman dibatalkan karena aliran data terputus.');
   }
 }
 

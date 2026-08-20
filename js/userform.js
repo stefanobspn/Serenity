@@ -18,6 +18,10 @@ form.addEventListener('submit', function (event) {
   event.preventDefault(); // urus perpindahan halaman sendiri lewat JS
 
   var nama = inputNamaEl.value.trim();
+  if (!nama) {
+    inputNamaEl.focus();
+    return;
+  }
 
   simpanHasilKuesioner('peserta', { nama: nama });
 

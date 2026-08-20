@@ -38,3 +38,4 @@ android/
 .opencode/
 .claude/
 graphify-out/
+.agents/
