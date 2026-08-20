@@ -218,38 +218,160 @@ function tampilkanHasilEeg() {
 }
 
 
-/* ===== Rekomendasi Aksi (gabungan kuesioner + verdict stres EEG) =====
-   Draft aturan pertama — tiap aturan dilewati kalau data yang dibutuhkan
-   belum ada, supaya tidak menampilkan rekomendasi dari data kosong. */
+/* ===== Rekomendasi Aksi (Berdasarkan PSS-5, SEES-10, & EEG) =====
+   Aturan rekomendasi:
+   - Rekomendasi A diberikan jika:
+     1. Stres kuesioner tinggi (skor PSS-5 > 14 atau status === 'TINGGI')
+     2. Emotional eating tinggi / overeating (rata-rata SEES-10 > 3)
+     3. Terjadi peningkatan stres dari data EEG (rasio Theta/Beta menurun)
+     4. Penurunan nafsu makan / emotional under-eating (rata-rata SEES-10 < 3)
+   - Rekomendasi B diberikan jika:
+     Kondisi stres rendah (skor PSS-5 < 15), emotional eating moderate/stabil
+     (rata-rata SEES-10 < 4), tidak ada peningkatan stres, dan tidak ada
+     perubahan nafsu makan berlebih. */
 
-function buatDaftarRekomendasi(hasil, verdictStresData) {
-  var daftar = [];
-  var stresNaik = !!verdictStresData && verdictStresData.arah === 'naik';
-  var stresTurunAtauStabil = !!verdictStresData && verdictStresData.arah !== 'naik';
+function evaluasiRekomendasi(hasil, verdictStresData) {
+  var pemicu = [];
 
-  if (stresNaik || (hasil.pss5 && hasil.pss5.status === 'TINGGI')) {
-    daftar.push('Tingkat stres terpantau tinggi/meningkat. Disarankan melakukan teknik relaksasi (napas dalam, istirahat sejenak, atau aromaterapi) sebelum melanjutkan aktivitas.');
-  }
-  if (stresTurunAtauStabil && hasil.pss5 && hasil.pss5.status === 'RENDAH') {
-    daftar.push('Kondisi stres tergolong baik. Pertahankan pola istirahat dan aktivitas saat ini.');
-  }
-  if (stresNaik && hasil.sees10 && hasil.sees10.status === 'TINGGI (OVER EATING)') {
-    daftar.push('Kecenderungan makan berlebih saat stres terdeteksi. Disarankan mengenali pemicu stres dan mencari alternatif selain makan, seperti journaling atau olahraga ringan.');
-  }
-  if (stresNaik && hasil.sees10 && hasil.sees10.status === 'RENDAH (UNDER EATING)') {
-    daftar.push('Kecenderungan makan berkurang saat stres terdeteksi. Pastikan tetap makan teratur meski dalam kondisi stres.');
-  }
-  if (hasil.hunger && hasil.hunger.skor <= 4) {
-    daftar.push('Rasa lapar cukup tinggi. Disarankan makan/minum sebelum melanjutkan aktivitas berikutnya.');
-  }
-  if (hasil.hunger && hasil.hunger.skor >= 7) {
-    daftar.push('Kondisi kenyang terpantau. Hindari makan berlebih lebih lanjut.');
+  var stresTinggi = hasil.pss5 && hasil.pss5.skor > 14;
+  if (stresTinggi) {
+    pemicu.push('Tingkat stres kuesioner tinggi (skor PSS-5: ' + hasil.pss5.skor + '/30)');
   }
 
-  if (daftar.length === 0) {
-    daftar.push('Kondisi stres dan pola makan tergolong stabil. Tidak ada rekomendasi khusus saat ini.');
+  var overEating = hasil.sees10 && hasil.sees10.rataRata > 3;
+  if (overEating) {
+    pemicu.push('Kecenderungan makan berlebih saat stres / overeating (rata-rata SEES-10: ' + hasil.sees10.rataRata.toFixed(2) + ')');
   }
-  return daftar;
+
+  var underEating = hasil.sees10 && hasil.sees10.rataRata < 3;
+  if (underEating) {
+    pemicu.push('Kecenderungan penurunan nafsu makan saat stres / under-eating (rata-rata SEES-10: ' + hasil.sees10.rataRata.toFixed(2) + ')');
+  }
+
+  var stresEegNaik = !!verdictStresData && verdictStresData.arah === 'naik';
+  if (stresEegNaik) {
+    pemicu.push('Peningkatan stres terdeteksi pada EEG (rasio Theta/Beta menurun)');
+  }
+
+  // Jika ada salah satu kriteria stres tinggi, emotional eating, atau peningkatan stres
+  if (stresTinggi || overEating || underEating || stresEegNaik) {
+    return {
+      tipe: 'A',
+      alasan: pemicu.length > 0 ? pemicu : ['Terdeteksi indikasi stres tinggi, peningkatan stres, atau perubahan nafsu makan.']
+    };
+  }
+
+  // Jika kondisi stabil / rendah
+  var alasanB = [];
+  if (hasil.pss5) {
+    alasanB.push('Tingkat stres kuesioner rendah (skor PSS-5: ' + hasil.pss5.skor + '/30)');
+  }
+  if (hasil.sees10) {
+    alasanB.push('Pola makan stabil / tidak berlebih (rata-rata SEES-10: ' + hasil.sees10.rataRata.toFixed(2) + ')');
+  }
+  if (verdictStresData && verdictStresData.arah !== 'naik') {
+    alasanB.push('Kondisi stres EEG terpantau stabil/menurun');
+  }
+  if (alasanB.length === 0) {
+    alasanB.push('Kondisi stres dan pola makan terpantau baik dan stabil.');
+  }
+
+  return {
+    tipe: 'B',
+    alasan: alasanB
+  };
+}
+
+function buatHtmlRekomendasiA(alasanList) {
+  var teksAlasan = alasanList.join(', ');
+  return '' +
+    '<div class="rekomendasi-card rekomendasi-card-a">' +
+      '<div class="rekomendasi-header">' +
+        '<span class="rekomendasi-badge rekomendasi-badge-a">Rekomendasi A</span>' +
+        '<h3 class="rekomendasi-judul">Intervensi Relaksasi & Regulasi Pola Makan</h3>' +
+      '</div>' +
+      '<div class="rekomendasi-kondisi">' +
+        '<p><strong>Kondisi:</strong> Jika stres tinggi atau terjadi peningkatan stres atau penurunan nafsu makan.</p>' +
+        '<p class="rekomendasi-alasan-detail"><strong>Indikator saat ini:</strong> ' + teksAlasan + '</p>' +
+      '</div>' +
+      '<p class="rekomendasi-instruksi">Lakukan relaksasi dengan:</p>' +
+      '<ol class="rekomendasi-ol">' +
+        '<li>' +
+          '<strong>Latihan pernapasan</strong> (Relaksasi diulang setiap hari selama minimal 5 - 10 menit)<br>' +
+          'Dapat dilakukan dengan cara:' +
+          '<ul class="rekomendasi-sublist">' +
+            '<li>Duduk dengan mata terpejam (posisi santai nyaman), membayangkan hal yang menyenangkan;</li>' +
+            '<li>Menarik napas melalui hidung, kemudian menahan 3 hitungan, dan selanjutnya dihembuskan melalui hidung, sambil membayangkan semua beban pikiran dilepaskan;</li>' +
+            '<li>Mensyukuri nikmat Tuhan YME.</li>' +
+          '</ul>' +
+        '</li>' +
+        '<li>' +
+          '<strong>Dapat dilanjutkan dengan:</strong>' +
+          '<ol type="a" class="rekomendasi-sublist-alpha">' +
+            '<li>' +
+              '<strong>Aktivitas meditasi:</strong>' +
+              '<ul class="rekomendasi-sublist">' +
+                '<li>Duduk tenang (dengan posisi tegap), sambil memejamkan mata dan mengatur pernapasan perlahan dan teratur (10-20 menit);</li>' +
+                '<li>Fokuskan perhatian anda pada tarikan napas dan hati/perasaan anda;</li>' +
+                '<li>Fokuskan pikiran pada berbagai bagian tubuh secara bergantian, sambil terus menarik napas perlahan. Sadari apa yang Anda rasakan di bagian-bagian tubuh tersebut. Anda juga bisa menyelingi sesi meditasi untuk berdoa, bersyukur, atau <em>positive self talk</em>.</li>' +
+              '</ul>' +
+            '</li>' +
+            '<li><strong>Mendengarkan musik</strong> (referensi: <a href="https://repository.rskariadi.id//index.php?p=show_detail&id=617" target="_blank" rel="noopener noreferrer" class="rekomendasi-link">repository.rskariadi.id</a>)</li>' +
+            '<li><strong>Aromaterapi</strong> dengan cengkeh, serai dan vanila (rasio = 2:1:2)</li>' +
+            '<li><strong>Aktivitas yoga</strong></li>' +
+          '</ol>' +
+        '</li>' +
+        '<li>' +
+          '<strong>Makan makanan yang bergizi dan latih Mindful eating</strong> atau makan dengan kesadaran penuh merupakan praktik makan dengan perhatian dan apresiasi penuh terhadap makanan yang tersaji di atas piring. Secara spesifik, <em>mindful eating</em> termasuk memerhatikan aroma, tekstur, hingga rasa makanan yang sedang dikonsumsi. Jangan lupa juga untuk memerhatikan porsi camilan maupun makanan utama agar tidak berlebihan.' +
+        '</li>' +
+      '</ol>' +
+    '</div>';
+}
+
+function buatHtmlRekomendasiB(alasanList) {
+  var teksAlasan = alasanList.join(', ');
+  return '' +
+    '<div class="rekomendasi-card rekomendasi-card-b">' +
+      '<div class="rekomendasi-header">' +
+        '<span class="rekomendasi-badge rekomendasi-badge-b">Rekomendasi B</span>' +
+        '<h3 class="rekomendasi-judul">Pemeliharaan Kondisi Positif & Relaksasi Preventif</h3>' +
+      '</div>' +
+      '<div class="rekomendasi-kondisi">' +
+        '<p><strong>Kondisi:</strong> Jika stres rendah atau tidak ada peningkatan stres dan tidak ada perubahan nafsu makan / makan yang berlebih.</p>' +
+        '<p class="rekomendasi-alasan-detail"><strong>Indikator saat ini:</strong> ' + teksAlasan + '</p>' +
+      '</div>' +
+      '<ol class="rekomendasi-ol">' +
+        '<li><strong>Jaga hal, rasa, kegiatan, dan lingkungan supaya tetap positif.</strong></li>' +
+        '<li>' +
+          '<strong>Dapat melakukan kegiatan relaksasi berikut jika dirasakan mengalami hal yang dapat memicu stres, yaitu:</strong>' +
+          '<ol type="a" class="rekomendasi-sublist-alpha">' +
+            '<li>' +
+              '<strong>Latihan pernapasan</strong> (Relaksasi diulang setiap hari selama minimal 5 - 10 menit)<br>' +
+              'Dapat dilakukan dengan cara:' +
+              '<ul class="rekomendasi-sublist">' +
+                '<li>Duduk dengan mata terpejam (posisi santai nyaman), membayangkan hal yang menyenangkan;</li>' +
+                '<li>Menarik napas melalui hidung, kemudian menahan 3 hitungan, dan selanjutnya dihembuskan melalui hidung, sambil membayangkan semua beban pikiran dilepaskan;</li>' +
+                '<li>Mensyukuri nikmat Tuhan YME.</li>' +
+              '</ul>' +
+            '</li>' +
+            '<li>' +
+              '<strong>Aktivitas meditasi:</strong>' +
+              '<ul class="rekomendasi-sublist">' +
+                '<li>Duduk tenang (dengan posisi tegap), sambil memejamkan mata dan mengatur pernapasan perlahan dan teratur (10-20 menit);</li>' +
+                '<li>Fokuskan perhatian anda pada tarikan napas dan hati/perasaan anda;</li>' +
+                '<li>Fokuskan pikiran pada berbagai bagian tubuh secara bergantian, sambil terus menarik napas perlahan. Sadari apa yang Anda rasakan di bagian-bagian tubuh tersebut. Anda juga bisa menyelingi sesi meditasi untuk berdoa, bersyukur, atau <em>positive self talk</em>.</li>' +
+              '</ul>' +
+            '</li>' +
+            '<li><strong>Mendengarkan musik</strong> (referensi: <a href="https://repository.rskariadi.id//index.php?p=show_detail&id=617" target="_blank" rel="noopener noreferrer" class="rekomendasi-link">repository.rskariadi.id</a>)</li>' +
+            '<li><strong>Aromaterapi</strong> dengan cengkeh, serai dan vanila (rasio = 2:1:2)</li>' +
+            '<li><strong>Aktivitas yoga</strong></li>' +
+          '</ol>' +
+        '</li>' +
+        '<li>' +
+          '<strong>Makan makanan yang bergizi dan latih Mindful eating</strong> atau makan dengan kesadaran penuh merupakan praktik makan dengan perhatian dan apresiasi penuh terhadap makanan yang tersaji di atas piring. Secara spesifik, <em>mindful eating</em> termasuk memerhatikan aroma, tekstur, hingga rasa makanan yang sedang dikonsumsi. Jangan lupa juga untuk memerhatikan porsi camilan maupun makanan utama agar tidak berlebihan.' +
+        '</li>' +
+      '</ol>' +
+    '</div>';
 }
 
 function tampilkanRekomendasi() {
@@ -263,17 +385,13 @@ function tampilkanRekomendasi() {
   }
 
   var verdictStresData = (hasil.eeg1 && hasil.eeg2) ? hitungVerdictStres(hasil.eeg1, hasil.eeg2) : null;
-  var daftar = buatDaftarRekomendasi(hasil, verdictStresData);
+  var evaluasi = evaluasiRekomendasi(hasil, verdictStresData);
 
-  var daftarEl = document.createElement('ul');
-  daftar.forEach(function (teks) {
-    var itemEl = document.createElement('li');
-    itemEl.textContent = teks;
-    daftarEl.appendChild(itemEl);
-  });
-
-  wadahEl.textContent = '';
-  wadahEl.appendChild(daftarEl);
+  if (evaluasi.tipe === 'A') {
+    wadahEl.innerHTML = buatHtmlRekomendasiA(evaluasi.alasan);
+  } else {
+    wadahEl.innerHTML = buatHtmlRekomendasiB(evaluasi.alasan);
+  }
 }
 
 
@@ -304,6 +422,7 @@ function buatCsvRingkasan() {
     'sees10_rata_rata',
     'sees10_status',
     'hunger_skor',
+    'rekomendasi_aksi',
     'eeg1_delta',
     'eeg1_theta',
     'eeg1_alpha',
@@ -332,8 +451,13 @@ function buatCsvRingkasan() {
   var eeg1PuncakAlpha = (eeg1 && eeg1.interval) ? cariNilaiPuncak(eeg1.interval, 'alpha').toFixed(3) : '';
   var eeg2PuncakAlpha = (eeg2 && eeg2.interval) ? cariNilaiPuncak(eeg2.interval, 'alpha').toFixed(3) : '';
 
-  var verdictStres = (eeg1 && eeg2) ? teksVerdictStres(hitungVerdictStres(eeg1, eeg2)) : '';
+  var verdictStresData = (eeg1 && eeg2) ? hitungVerdictStres(eeg1, eeg2) : null;
+  var verdictStres = verdictStresData ? teksVerdictStres(verdictStresData) : '';
   var verdictLapar = (eeg1 && eeg2) ? teksVerdictLapar(hitungVerdictLapar(eeg1, eeg2)) : '';
+
+  var adaKuesioner = !!(hasil.pss5 || hasil.sees10 || hasil.hunger);
+  var hasilRekom = adaKuesioner ? evaluasiRekomendasi(hasil, verdictStresData) : null;
+  var teksRekomendasi = hasilRekom ? ('Rekomendasi ' + hasilRekom.tipe) : '';
 
   var baris = [
     waktuUnduh,
@@ -343,6 +467,7 @@ function buatCsvRingkasan() {
     hasil.sees10 ? hasil.sees10.rataRata.toFixed(2) : '',
     hasil.sees10 ? hasil.sees10.status : '',
     hasil.hunger ? hasil.hunger.skor : '',
+    teksRekomendasi,
     (eeg1 && eeg1.delta) ? eeg1.delta.value : '',
     (eeg1 && eeg1.theta) ? eeg1.theta.value : '',
     (eeg1 && eeg1.alpha) ? eeg1.alpha.value : '',
